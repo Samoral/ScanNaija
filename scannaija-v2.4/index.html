@@ -1,0 +1,2763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>◈ ScanNaija — Barcode & Product Security</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+
+  <style>
+  /* ═══════════════════════════════════════════════
+     VARIABLES & RESET
+  ═══════════════════════════════════════════════ */
+  :root{
+    --navy:#0A0F1E; --navy2:#111827; --navy3:#1C2537; --navy4:#243049;
+    --accent:#00D4A1; --accent2:#00B386; --warn:#F5A623; --danger:#E84040;
+    --purple:#8B5CF6; --blue:#3B82F6;
+    --text:#E8EDF5; --text2:#9BADC7; --text3:#5E7299;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+    --card:rgba(255,255,255,0.04);
+    --font:'DM Sans',sans-serif; --mono:'Space Mono',monospace; --r:12px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:var(--navy2);}
+  ::-webkit-scrollbar-thumb{background:rgba(0,212,161,.25);border-radius:4px;}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(0,212,161,.5);}
+  body{background:var(--navy);color:var(--text);font-family:var(--font);font-size:14px;display:flex;height:100vh;overflow:hidden;}
+
+  /* ═══════════════════════════════════════════════
+     SIDEBAR
+  ═══════════════════════════════════════════════ */
+  .sidebar{width:220px;min-width:220px;background:var(--navy2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 0;z-index:10;transition:width .2s;}
+  .logo{padding:0 18px 20px;border-bottom:1px solid var(--border);margin-bottom:14px;}
+  .logo-mark{display:flex;align-items:center;gap:10px;}
+  .logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;flex-shrink:0;}
+  .logo-text{font-size:15px;font-weight:600;color:var(--text);}
+  .logo-sub{font-size:10px;color:var(--text3);margin-top:1px;font-family:var(--mono);}
+  .nav-section{padding:0 10px;margin-bottom:2px;}
+  .nav-label{font-size:9px;color:var(--text3);font-weight:600;letter-spacing:1.2px;text-transform:uppercase;padding:0 10px;margin-bottom:3px;margin-top:14px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;position:relative;user-select:none;}
+  .nav-item:hover{background:var(--card);color:var(--text);}
+  .nav-item.active{background:rgba(0,212,161,.1);color:var(--accent);}
+  .nav-item.active::before{content:'';position:absolute;left:-10px;width:3px;height:60%;background:var(--accent);border-radius:0 3px 3px 0;top:50%;transform:translateY(-50%);}
+  .nav-icon{width:18px;text-align:center;font-size:13px;flex-shrink:0;}
+  .nbadge{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;}
+  .nbadge-warn{background:var(--warn);color:#000;}
+  .sidebar-footer{margin-top:auto;padding:14px 10px 0;border-top:1px solid var(--border);}
+  .user-pill{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;cursor:pointer;transition:background .15s;}
+  .user-pill:hover{background:var(--card);}
+  .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+  .user-name{font-size:13px;font-weight:500;color:var(--text);}
+  .user-role{font-size:11px;color:var(--text3);}
+
+  /* ═══════════════════════════════════════════════
+     MAIN AREA
+  ═══════════════════════════════════════════════ */
+  .main-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0;}
+  .page{display:none;flex-direction:column;flex:1;}
+  .page.active{display:flex;}
+
+  /* ── Topbar ── */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 28px 0;flex-shrink:0;}
+  .topbar h1{font-size:19px;font-weight:600;letter-spacing:-.3px;}
+  .topbar p{font-size:12px;color:var(--text2);margin-top:3px;}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .status-pill{display:flex;align-items:center;gap:6px;background:rgba(0,212,161,.08);border:1px solid rgba(0,212,161,.2);border-radius:20px;padding:6px 12px;font-size:12px;color:var(--accent);font-family:var(--mono);}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .time-badge{background:var(--navy3);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;font-size:12px;font-family:var(--mono);color:var(--text2);}
+
+  /* ── Page content ── */
+  .page-content{padding:20px 28px 32px;display:flex;flex-direction:column;gap:18px;flex:1;overflow-y:auto;}
+
+  /* ── Stats ── */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;transition:border-color .2s;}
+  .stat-card:hover{border-color:var(--border2);}
+  .stat-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;}
+  .stat-value{font-size:24px;font-weight:600;font-family:var(--mono);letter-spacing:-.5px;}
+  .stat-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+  .c-good{color:var(--accent);} .c-bad{color:var(--danger);} .c-warn{color:var(--warn);}
+
+  /* ── Alerts ── */
+  .alerts{display:flex;flex-direction:column;gap:10px;}
+  .alert-card{border-radius:var(--r);padding:14px 16px;border:1px solid;display:flex;gap:14px;align-items:flex-start;transition:opacity .15s;}
+  .alert-danger{background:rgba(232,64,64,.07);border-color:rgba(232,64,64,.25);}
+  .alert-warn{background:rgba(245,166,35,.07);border-color:rgba(245,166,35,.25);}
+  .alert-info{background:rgba(59,130,246,.07);border-color:rgba(59,130,246,.25);}
+  .alert-icon-wrap{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+  .icon-danger{background:rgba(232,64,64,.15);} .icon-warn{background:rgba(245,166,35,.15);} .icon-info{background:rgba(59,130,246,.15);}
+  .alert-body{flex:1;min-width:0;}
+  .alert-title{font-size:13px;font-weight:600;margin-bottom:4px;}
+  .title-danger{color:#F07070;} .title-warn{color:#F5C060;} .title-info{color:#60A5FA;}
+  .alert-detail{font-size:12px;color:var(--text3);line-height:1.5;}
+  .alert-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  .tag{font-size:11px;font-family:var(--mono);padding:3px 8px;border-radius:6px;font-weight:700;border:1px solid;}
+  .tag-danger{background:rgba(232,64,64,.1);border-color:rgba(232,64,64,.3);color:#F07070;}
+  .tag-warn{background:rgba(245,166,35,.1);border-color:rgba(245,166,35,.3);color:#F5C060;}
+  .alert-action{font-size:11px;color:var(--accent);font-weight:600;margin-top:8px;display:inline-block;cursor:pointer;}
+  .alert-action:hover{text-decoration:underline;}
+  .alert-dismiss{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0;line-height:1;transition:color .15s;}
+  .alert-dismiss:hover{color:var(--text);}
+
+  /* ── Panels ── */
+  .panel{background:var(--navy2);border:1px solid var(--border2);border-radius:16px;padding:22px;}
+  .panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .panel-title{font-size:14px;font-weight:600;}
+  .panel-desc{font-size:12px;color:var(--text3);line-height:1.5;margin-bottom:18px;}
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .section-title{font-size:14px;font-weight:600;}
+  .section-sub{font-size:12px;color:var(--text3);}
+
+  /* ── Form ── */
+  .form-grid  {display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .form-row   {margin-top:14px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field-label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;}
+  .req{color:var(--accent);}
+  .field input,.field select,.field textarea{background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:9px 12px;font-family:var(--font);transition:border-color .15s,box-shadow .15s;outline:none;width:100%;}
+  .field input::placeholder,.field textarea::placeholder{color:var(--text3);}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,161,.1);}
+  .field input.error,.field select.error{border-color:var(--danger)!important;box-shadow:0 0 0 3px rgba(232,64,64,.1);}
+  .field input.valid{border-color:var(--accent);}
+  .field select{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235E7299' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+  .field select option{background:var(--navy2);color:var(--text);}
+  .field textarea{resize:vertical;min-height:72px;}
+  .field-hint{font-size:11px;color:var(--text3);margin-top:2px;}
+  .field-error{font-size:11px;color:var(--danger);margin-top:2px;display:none;}
+  input[type="file"]{display:none;}
+  input[type="color"]{padding:2px;width:42px;height:34px;cursor:pointer;border-radius:6px;background:none;border:1px solid var(--border2);}
+  .file-btn{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-size:12px;padding:9px 12px;cursor:pointer;transition:all .15s;width:100%;}
+  .file-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .file-btn.has-file{border-color:var(--accent);color:var(--accent);}
+  .toggle-group{display:flex;gap:8px;}
+  .toggle-btn{padding:8px 18px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s;}
+  .toggle-btn.on{background:rgba(139,92,246,.2);border-color:var(--purple);color:var(--purple);}
+  .mfr-id-box{background:rgba(0,212,161,.06);border:1px solid rgba(0,212,161,.2);border-radius:8px;padding:12px 14px;font-family:var(--mono);font-size:12px;color:var(--accent);display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;}
+  .mfr-id-copy{background:none;border:1px solid rgba(0,212,161,.3);color:var(--accent);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:var(--font);transition:all .15s;}
+  .mfr-id-copy:hover{background:rgba(0,212,161,.1);}
+
+  /* ── Buttons ── */
+  .btn{border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s;border:1px solid transparent;display:inline-flex;align-items:center;gap:7px;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-primary{background:var(--accent);color:#001a13;border-color:var(--accent);}
+  .btn-primary:hover:not(:disabled){background:var(--accent2);border-color:var(--accent2);}
+  .btn-ghost{background:none;border-color:var(--border2);color:var(--text2);}
+  .btn-ghost:hover:not(:disabled){border-color:var(--text3);color:var(--text);}
+  .btn-purple{background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.4);color:var(--purple);}
+  .btn-purple:hover:not(:disabled){background:rgba(139,92,246,.25);}
+  .btn-warn{background:rgba(245,166,35,.12);border-color:rgba(245,166,35,.35);color:var(--warn);}
+  .btn-warn:hover:not(:disabled){background:rgba(245,166,35,.22);}
+  .btn-blue{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.35);color:#60A5FA;}
+  .btn-blue:hover:not(:disabled){background:rgba(59,130,246,.22);}
+  .btn-danger{background:rgba(232,64,64,.12);border-color:rgba(232,64,64,.35);color:var(--danger);}
+  .btn-danger:hover:not(:disabled){background:rgba(232,64,64,.22);}
+  .btn-sm{padding:6px 12px;font-size:12px;}
+  .btn-dashed{border-style:dashed;}
+  .form-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px;}
+
+  /* ── Barcode output ── */
+  .barcode-output{display:none;background:rgba(0,212,161,.04);border:1px solid rgba(0,212,161,.15);border-radius:var(--r);padding:16px;margin-top:16px;}
+  .barcode-output.visible{display:block;}
+  #generatedBarcode{display:flex;gap:14px;align-items:flex-start;justify-content:center;flex-wrap:wrap;max-height:280px;overflow-y:auto;padding:4px;}
+  .barcodeSvg{display:flex;flex-direction:column;align-items:center;gap:4px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:10px;}
+  .barcodeSvg svg{height:70px;width:150px;}
+  .barcodeSvg_number{color:var(--text2);font-size:9px;font-family:var(--mono);text-align:center;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .wrapper-output{display:none;border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-top:16px;overflow:auto;}
+  .wrapper-output.visible{display:block;}
+  .generated{display:flex;border-radius:8px;overflow:hidden;}
+
+  /* ── Image preview ── */
+  .img-preview{width:48px;height:48px;border-radius:6px;object-fit:cover;display:none;}
+
+  /* ── Database page ── */
+  .db-topbar{padding:20px 28px 16px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+  .db-content{padding:16px 28px 28px;flex:1;display:flex;flex-direction:column;gap:14px;overflow:hidden;}
+  .search-bar{display:flex;align-items:center;gap:10px;background:var(--navy3);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;}
+  .search-bar i{color:var(--text3);font-size:13px;}
+  .search-bar input{background:transparent;border:0;outline:none;color:var(--text);font-size:13px;flex:1;font-family:var(--font);}
+  .search-bar input::placeholder{color:var(--text3);}
+  .table-wrap{overflow:auto;border-radius:var(--r);border:1px solid var(--border);flex:1;}
+  table{border-collapse:collapse;width:100%;}
+  table th,table td{border:1px solid rgba(255,255,255,.06);color:var(--text2);padding:10px 12px;text-align:center;font-size:12px;white-space:nowrap;}
+  table th{color:var(--accent);background:rgba(0,212,161,.06);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.6px;position:sticky;top:0;z-index:2;}
+  table tbody tr:hover td{background:rgba(255,255,255,.02);}
+  table td:nth-child(3){text-align:left;white-space:normal;max-width:140px;}
+  .db-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:60px;color:var(--text3);font-size:13px;}
+  .db-empty i{font-size:32px;opacity:.3;}
+  .databaseCode svg{height:36px;width:100px;}
+  .row-actions{display:flex;gap:6px;justify-content:center;}
+  .row-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text3);padding:4px 8px;font-size:11px;cursor:pointer;transition:all .15s;}
+  .row-btn:hover{border-color:var(--danger);color:var(--danger);}
+
+  /* ── Settings page ── */
+  .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px;}
+  .setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
+  .setting-row:last-child{border-bottom:none;}
+  .setting-label{font-size:13px;font-weight:500;}
+  .setting-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+  .switch{position:relative;display:inline-block;width:40px;height:22px;}
+  .switch input{display:none;}
+  .slider-sw{position:absolute;cursor:pointer;inset:0;background:var(--navy3);border-radius:22px;transition:.3s;border:1px solid var(--border2);}
+  .slider-sw::before{content:'';position:absolute;width:16px;height:16px;left:2px;top:2px;background:var(--text3);border-radius:50%;transition:.3s;}
+  input:checked+.slider-sw{background:rgba(0,212,161,.2);border-color:var(--accent);}
+  input:checked+.slider-sw::before{transform:translateX(18px);background:var(--accent);}
+
+  /* ── Toast ── */
+  #toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999;}
+  .toast{display:flex;align-items:center;gap:10px;background:var(--navy3);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--text);min-width:240px;max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:toastIn .25s ease;}
+  .toast.success{border-color:rgba(0,212,161,.3);}
+  .toast.error{border-color:rgba(232,64,64,.3);}
+  .toast.warn{border-color:rgba(245,166,35,.3);}
+  .toast-icon{font-size:15px;}
+  @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ── Modal ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--navy2);border:1px solid var(--border2);border-radius:16px;padding:24px;width:460px;max-width:90vw;}
+  .modal-title{font-size:15px;font-weight:600;margin-bottom:6px;}
+  .modal-desc{font-size:12px;color:var(--text3);margin-bottom:20px;line-height:1.5;}
+  .modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
+
+  /* ── Report Modal ── */
+  .report-modal{width:620px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+  .report-steps{display:flex;gap:0;margin-bottom:22px;border-bottom:1px solid var(--border);padding-bottom:14px;}
+  .report-step{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;color:var(--text3);flex:1;position:relative;}
+  .report-step.active{color:var(--accent);}
+  .report-step.done{color:var(--accent2);}
+  .step-num{width:22px;height:22px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .2s;}
+  .report-step.active .step-num{background:var(--accent);border-color:var(--accent);color:#001a13;}
+  .report-step.done .step-num{background:var(--accent2);border-color:var(--accent2);color:#001a13;}
+  .step-line{flex:1;height:1px;background:var(--border2);margin:0 6px;}
+  .report-step.done .step-line{background:var(--accent2);}
+  .report-pane{display:none;} .report-pane.active{display:block;}
+  .authority-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .authority-card{border:2px solid var(--border2);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .2s;}
+  .authority-card:hover{border-color:rgba(0,212,161,.4);background:rgba(0,212,161,.04);}
+  .authority-card.selected{border-color:var(--accent);background:rgba(0,212,161,.08);}
+  .authority-card .auth-name{font-size:13px;font-weight:600;margin-bottom:2px;}
+  .authority-card .auth-full{font-size:10px;color:var(--text3);}
+  .authority-card .auth-type{font-size:10px;font-family:var(--mono);margin-top:6px;color:var(--accent);}
+  .report-preview{background:var(--navy);border:1px solid var(--border2);border-radius:10px;padding:20px;font-size:12px;line-height:1.7;font-family:var(--mono);color:var(--text2);white-space:pre-wrap;max-height:320px;overflow-y:auto;}
+  .report-preview strong{color:var(--text);font-weight:700;}
+  .success-tick{width:56px;height:56px;border-radius:50%;background:rgba(0,212,161,.15);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px;}
+  .ref-box{background:rgba(0,212,161,.06);border:1px solid rgba(0,212,161,.2);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:13px;color:var(--accent);text-align:center;letter-spacing:1px;margin:14px 0;}
+  .channel-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  .channel-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:12px;}
+  .channel-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0;}
+
+  /* ── Color pickers ── */
+  .color-row{display:flex;gap:16px;align-items:flex-end;}
+  .color-pick{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--text3);}
+
+  /* ── Footer barcode ── */
+  .app-footer{flex-shrink:0;display:flex;justify-content:center;align-items:center;padding:8px 0 6px;border-top:1px solid var(--border);opacity:.25;}
+  .app-footer svg{height:20px;width:110px;}
+
+  /* ── Sales list urgency badges ── */
+  .urgency-expired  { color: var(--danger); font-weight: 700; }
+  .urgency-critical { color: var(--danger); font-weight: 600; }
+  .urgency-soon     { color: var(--warn);   font-weight: 600; }
+  .urgency-upcoming { color: var(--text2);  font-weight: 600; }
+  .discount-badge   { display:inline-block;background:rgba(0,212,161,.1);color:var(--accent);border:1px solid rgba(0,212,161,.25);border-radius:6px;padding:2px 8px;font-size:11px;font-family:var(--mono);font-weight:700; }
+  .discount-badge.hot{ background:rgba(232,64,64,.1);color:var(--danger);border-color:rgba(232,64,64,.25); }
+  .discount-badge.warm{ background:rgba(245,166,35,.1);color:var(--warn);border-color:rgba(245,166,35,.25); }
+
+  /* ═══════════════════════════════════════════════
+     PRINT STYLES
+  ═══════════════════════════════════════════════ */
+  @media print{
+    .sidebar,.topbar,.topbar-right,.alerts,.stats,.panel-desc,.form-actions,
+    .app-footer,.page-content>*:not(.barcode-output):not(.wrapper-output),
+    .btn,#barcodeOutputArea .section-head{display:none!important;}
+    body{background:#fff!important;color:#000!important;display:block!important;height:auto!important;}
+    .main-area,.page{display:block!important;overflow:visible!important;}
+    .barcode-output.visible,.wrapper-output.visible{display:block!important;border:none!important;background:#fff!important;margin:0!important;padding:0!important;}
+    #generatedBarcode{max-height:none!important;flex-wrap:wrap!important;justify-content:flex-start!important;gap:20px!important;padding:20px!important;}
+    .barcodeSvg{background:#fff!important;border:1px solid #ddd!important;break-inside:avoid;}
+    .barcodeSvg svg{height:100px!important;width:200px!important;}
+    .barcodeSvg_number{color:#000!important;font-size:11px!important;}
+    .generated{break-inside:avoid;}
+  }
+
+  /* ═══════════════════════════════════════════════
+     RESPONSIVE
+  ═══════════════════════════════════════════════ */
+  @media(max-width:900px){
+    .sidebar{width:54px;min-width:54px;}
+    .logo-text,.logo-sub,.nav-label,.nav-item>span:not(.nav-icon),.nbadge,.user-info{display:none;}
+    .nav-item{justify-content:center;}
+    .stats{grid-template-columns:1fr 1fr;}
+    .form-grid,.settings-grid{grid-template-columns:1fr 1fr;}
+    .topbar{flex-wrap:wrap;gap:10px;}
+  }
+  @media(max-width:600px){
+    .stats{grid-template-columns:1fr 1fr;}
+    .form-grid,.form-grid-2,.settings-grid{grid-template-columns:1fr;}
+    .page-content{padding:16px;}
+    .topbar{padding:14px 16px 0;}
+  }
+
+  /* ═══════════════════════════════════════════════
+     BUYER PORTAL
+  ═══════════════════════════════════════════════ */
+  .buyer-shell{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 24px 60px;overflow-y:auto;background:radial-gradient(ellipse at 50% 0%,rgba(0,212,161,.06) 0%,transparent 70%);}
+  .buyer-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px;}
+  .buyer-logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;}
+  .buyer-card{width:100%;max-width:500px;background:var(--navy2);border:1px solid var(--border2);border-radius:20px;padding:32px;box-shadow:0 24px 64px rgba(0,0,0,.4);}
+  .buyer-card h2{font-size:20px;font-weight:700;margin-bottom:4px;letter-spacing:-.3px;}
+  .buyer-card .sub{font-size:13px;color:var(--text3);margin-bottom:28px;line-height:1.5;}
+  .scan-input-wrap{position:relative;margin-bottom:14px;}
+  .scan-input-wrap input{width:100%;background:rgba(255,255,255,.05);border:2px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;padding:13px 44px 13px 16px;font-family:var(--font);outline:none;transition:border-color .2s,box-shadow .2s;}
+  .scan-input-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(0,212,161,.1);}
+  .scan-input-wrap .scan-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:15px;pointer-events:none;}
+  .verify-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#001a13;font-size:14px;font-weight:700;border:none;border-radius:10px;cursor:pointer;font-family:var(--font);transition:opacity .15s,transform .1s;letter-spacing:.2px;}
+  .verify-btn:hover{opacity:.9;} .verify-btn:active{transform:scale(.99);}
+  .verify-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .verify-spinner{display:none;width:18px;height:18px;border:2px solid rgba(0,26,19,.3);border-top-color:#001a13;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .verify-result{margin-top:22px;border-radius:14px;padding:22px;display:none;}
+  .vr-authentic{background:rgba(0,212,161,.06);border:2px solid rgba(0,212,161,.3);}
+  .vr-fake{background:rgba(232,64,64,.06);border:2px solid rgba(232,64,64,.3);}
+  .vr-unknown{background:rgba(245,166,35,.06);border:2px solid rgba(245,166,35,.3);}
+  .vr-header{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+  .vr-badge{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+  .vr-badge-ok{background:rgba(0,212,161,.15);}
+  .vr-badge-fake{background:rgba(232,64,64,.15);}
+  .vr-badge-unk{background:rgba(245,166,35,.15);}
+  .vr-title{font-size:18px;font-weight:700;}
+  .vr-title-ok{color:var(--accent);} .vr-title-fake{color:var(--danger);} .vr-title-unk{color:var(--warn);}
+  .vr-sub{font-size:12px;color:var(--text3);margin-top:2px;}
+  .vr-details{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+  .vr-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:8px;font-size:12px;}
+  .vr-label{color:var(--text3);} .vr-val{color:var(--text);font-weight:600;font-family:var(--mono);font-size:11px;text-align:right;max-width:55%;}
+  .vr-actions{display:flex;gap:10px;margin-top:16px;}
+  .vr-btn{flex:1;padding:10px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid;font-family:var(--font);transition:all .15s;}
+  .vr-btn-report{background:rgba(232,64,64,.1);border-color:rgba(232,64,64,.3);color:var(--danger);}
+  .vr-btn-report:hover{background:rgba(232,64,64,.2);}
+  .vr-btn-share{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:#60A5FA;}
+  .vr-btn-share:hover{background:rgba(59,130,246,.2);}
+  .recent-scans{margin-top:24px;width:100%;max-width:500px;}
+  .recent-scans h4{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+  .scan-history-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--navy2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+  .scan-history-item:hover{border-color:var(--border2);}
+  .shi-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .shi-dot-ok{background:var(--accent);} .shi-dot-fake{background:var(--danger);} .shi-dot-unk{background:var(--warn);}
+  .shi-code{font-size:11px;font-family:var(--mono);color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .shi-status{font-size:11px;font-weight:600;}
+  .shi-ok{color:var(--accent);} .shi-fake{color:var(--danger);} .shi-unk{color:var(--warn);}
+  .shi-time{font-size:10px;color:var(--text3);}
+
+  /* sync status badge */
+  .sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);padding:3px 8px;border-radius:20px;border:1px solid;}
+  .sync-ok{background:rgba(0,212,161,.06);border-color:rgba(0,212,161,.2);color:var(--accent);}
+  .sync-pending{background:rgba(245,166,35,.06);border-color:rgba(245,166,35,.2);color:var(--warn);}
+  .sync-err{background:rgba(232,64,64,.06);border-color:rgba(232,64,64,.2);color:var(--danger);}
+  .sync-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+  .piracy-alert-banner{background:rgba(232,64,64,.08);border:1px solid rgba(232,64,64,.25);border-radius:12px;padding:16px 18px;margin-top:16px;display:none;}
+  .pab-title{font-size:13px;font-weight:700;color:#F07070;margin-bottom:4px;}
+  .pab-body{font-size:12px;color:var(--text3);line-height:1.5;}
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">
+      <div class="logo-icon">◈</div>
+      <div>
+        <div class="logo-text">ScanNaija</div>
+        <div class="logo-sub">v2.1 · secure</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <div class="nav-item active" data-page="dashboard"><span class="nav-icon"><i class="fa fa-home"></i></span><span>Dashboard</span></div>
+    <div class="nav-item" data-page="database"><span class="nav-icon"><i class="fa fa-database"></i></span><span>Database</span><span class="nbadge" id="dbCountBadge" style="display:none">0</span></div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Security</div>
+    <div class="nav-item" data-page="piracy"><span class="nav-icon"><i class="fa fa-warning" style="color:var(--danger)"></i></span><span>Piracy Alerts</span><span class="nbadge" id="piracyBadge">2</span></div>
+    <div class="nav-item" data-page="expiry"><span class="nav-icon"><i class="fa fa-clock-o" style="color:var(--warn)"></i></span><span>Expiry Watch</span><span class="nbadge nbadge-warn" id="expiryBadge">4</span></div>
+    <div class="nav-item" data-page="saleslist"><span class="nav-icon"><i class="fa fa-tags" style="color:var(--blue)"></i></span><span>Sales List</span><span class="nbadge" id="saleslistBadge" style="display:none;background:var(--blue)">0</span></div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Buyer</div>
+    <div class="nav-item" data-page="buyer"><span class="nav-icon"><i class="fa fa-qrcode" style="color:var(--blue)"></i></span><span>Buyer Verify</span></div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Account</div>
+    <div class="nav-item" data-page="settings"><span class="nav-icon"><i class="fa fa-gear"></i></span><span>Settings</span></div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-pill" data-page="settings">
+      <div class="avatar" id="avatarInitials">?</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebarUserName">—</div>
+        <div class="user-role" id="sidebarCompany">Not registered</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════════
+   TOAST CONTAINER
+══════════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+<!-- ══════════════════════════════════════════
+   CONFIRM MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-title" id="confirmTitle">Are you sure?</div>
+    <div class="modal-desc" id="confirmDesc">This action cannot be undone.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" id="confirmCancel">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="confirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+   MAIN
+══════════════════════════════════════════ -->
+<div class="main-area">
+
+<!-- ─────────────── DASHBOARD PAGE ─────────────── -->
+<div class="page active" id="page-dashboard">
+  <div class="topbar">
+    <div>
+      <h1 id="greetingText">Good day 👋 <span id="greetingName" style="color:var(--accent)">—</span></h1>
+      <p id="greetingSub">Complete Section A below to get started.</p>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill"><div class="dot"></div> Secure</div>
+      <span class="sync-badge sync-pending" id="syncStatusBadge"><span class="sync-dot"></span><span id="syncStatusText">Syncing…</span></span>
+      <div class="time-badge dummyTime">00:00:00</div>
+    </div>
+  </div>
+
+  <div class="page-content">
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Registered</div>
+        <div class="stat-value" id="stat-total" style="color:var(--text)">0</div>
+        <div class="stat-sub">products in database</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Piracy Flagged</div>
+        <div class="stat-value c-bad" id="stat-piracy">2</div>
+        <div class="stat-sub">locations detected</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Expiring Soon</div>
+        <div class="stat-value c-warn" id="stat-expiry">4</div>
+        <div class="stat-sub">within 30 days</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Barcodes Generated</div>
+        <div class="stat-value c-good" id="stat-barcodes">0</div>
+        <div class="stat-sub">this session</div>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    <div>
+      <div class="section-head">
+        <div class="section-title">Active Alerts</div>
+        <button class="btn btn-ghost btn-sm" id="dismissAllAlerts"><i class="fa fa-check"></i> Dismiss all</button>
+      </div>
+      <div class="alerts" id="alertsContainer">
+        <div class="alert-card alert-danger" id="piracyAlert">
+          <div class="alert-icon-wrap icon-danger">🛡</div>
+          <div class="alert-body">
+            <div class="alert-title title-danger">Piracy detected — 2 counterfeit scan locations</div>
+            <div class="alert-detail">Your barcodes were scanned from unauthorized locations. These products may be counterfeit copies.</div>
+            <div class="alert-tags">
+              <span class="tag tag-danger">234.123.456</span>
+              <span class="tag tag-danger">234.123.456</span>
+            </div>
+            <span class="alert-action" onclick="showPage('piracy')">View full piracy report ›</span>
+          </div>
+          <button class="alert-dismiss" onclick="dismissAlert('piracyAlert','piracyBadge','stat-piracy')">✕</button>
+        </div>
+        <div class="alert-card alert-warn" id="expiryAlert" style="display:none">
+          <div class="alert-icon-wrap icon-warn">⏰</div>
+          <div class="alert-body">
+            <div class="alert-title title-warn" id="expiryAlertTitle">Products expiring soon — act before due date</div>
+            <div class="alert-detail">Move these to your priority sales list to avoid losses.</div>
+            <div class="alert-tags" id="expiryTags"></div>
+            <span class="alert-action" id="moveToSalesList">Move all to next sales list ›</span>
+          </div>
+          <button class="alert-dismiss" onclick="dismissAlert('expiryAlert','expiryBadge','stat-expiry')">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buyer-Triggered Piracy Alerts -->
+    <div class="piracy-alert-banner" id="buyerPiracyBanner">
+      <div class="pab-title">🚨 Buyer Scan Flagged a Counterfeit!</div>
+      <div class="pab-body" id="buyerPiracyBannerBody">A buyer attempted to verify a barcode that does not match your registered products.</div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button class="btn btn-danger btn-sm" onclick="openReportModal()"><i class="fa fa-flag"></i> File Report Now</button>
+        <button class="btn btn-ghost btn-sm" onclick="$('#buyerPiracyBanner').hide()">Dismiss</button>
+      </div>
+    </div>
+
+    <!-- SECTION A -->
+    <div class="panel" id="sectionA_wrapper">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Section A — Manufacturer Details</div>
+          <div class="panel-desc">Fill this once to generate your unique Manufacturer ID. This ID is locked to your company forever.</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="editCompanyBtn" style="display:none"><i class="fa fa-pencil"></i> Edit</button>
+      </div>
+
+      <div class="form-grid" id="sectionA_form">
+        <div class="field">
+          <label class="field-label">Company Name <span class="req">*</span></label>
+          <input id="companyName_input" type="text" placeholder="e.g Adwaps Farms">
+          <span class="field-error" id="err-company">Company name is required</span>
+        </div>
+        <div class="field">
+          <label class="field-label">Company Reg. No. <span class="req">*</span></label>
+          <input id="regNo_input" type="text" placeholder="e.g 1122345">
+        </div>
+        <div class="field">
+          <label class="field-label">Date Issued <span class="req">*</span></label>
+          <input id="dateIssued_input" type="date">
+        </div>
+        <div class="field">
+          <label class="field-label">Company Email <span class="req">*</span></label>
+          <input id="email_input" type="email" placeholder="e.g admin@company.com">
+        </div>
+        <div class="field">
+          <label class="field-label">Country <span class="req">*</span></label>
+          <input id="country_input" type="text" placeholder="e.g Nigeria">
+        </div>
+        <div class="field">
+          <label class="field-label">CEO / Director Name <span class="req">*</span></label>
+          <input id="ceoName_input" type="text" placeholder="e.g Dr. Adekunloti">
+        </div>
+        <div class="field">
+          <label class="field-label">CEO Image</label>
+          <label class="file-btn" for="ceo_input" id="ceoFileLabel"><i class="fa fa-user"></i> <span id="ceoFileName">Choose image</span></label>
+          <input type="file" id="ceo_input" accept="image/*">
+          <img class="img-preview" id="ceoPreview">
+        </div>
+        <div class="field">
+          <label class="field-label">Affiliated with another company?</label>
+          <div class="toggle-group">
+            <button class="toggle-btn" id="button_yes">YES</button>
+            <button class="toggle-btn" id="button_no">NO</button>
+          </div>
+        </div>
+        <div class="field" id="affiliateField" style="display:none">
+          <label class="field-label">Affiliate Company Name</label>
+          <input id="affiliateCompany_input" type="text" placeholder="e.g Pascals & Family Ltd">
+        </div>
+      </div>
+
+      <div class="form-actions" id="sectionA_actions">
+        <button class="btn btn-primary" id="generateManufacturer_id"><i class="fa fa-id-card-o"></i> Generate Manufacturer ID</button>
+      </div>
+
+      <div id="mfrIdDisplay" style="display:none">
+        <div class="mfr-id-box">
+          <div>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:3px">Your Manufacturer ID</div>
+            <strong id="mfrIdValue" style="font-size:13px"></strong>
+          </div>
+          <button class="mfr-id-copy" id="copyMfrId"><i class="fa fa-copy"></i> Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION B -->
+    <div class="panel">
+      <div class="panel-title">Section B — Register Product</div>
+      <div class="panel-desc">Add product details below. Each product gets a unique barcode tied to your Manufacturer ID.</div>
+
+      <div class="form-grid sectionB_form" id="sectionB_grid">
+        <div class="field">
+          <label class="field-label">Product Name <span class="req">*</span></label>
+          <input type="text" placeholder="e.g Aura Cola Pet Can" id="productName_input">
+        </div>
+        <div class="field">
+          <label class="field-label">Product Size <span class="req">*</span></label>
+          <input type="text" placeholder="e.g 60CL" id="productSize_input">
+        </div>
+        <div class="field">
+          <label class="field-label">Category <span class="req">*</span></label>
+          <select id="productCategory">
+            <option value="">Select category</option>
+            <option value="Beverages">Beverages</option>
+            <option value="Eatables">Eatables</option>
+            <option value="Machines">Machines</option>
+            <option value="Furnitures">Furnitures</option>
+            <option value="Textiles">Textiles</option>
+            <option value="Farm Produce">Farm Produce</option>
+            <option value="Pharmaceuticals">Pharmaceuticals</option>
+            <option value="Cosmetics">Cosmetics</option>
+            <option value="Electronics">Electronics</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Unit Price (₦) <span class="req">*</span></label>
+          <input type="number" id="product_price" placeholder="e.g 1500" min="0">
+        </div>
+        <div class="field">
+          <label class="field-label">Manufacture Date <span class="req">*</span></label>
+          <input type="datetime-local" id="manufacturedDate">
+        </div>
+        <div class="field">
+          <label class="field-label">Expiry / Warranty Date <span class="req">*</span></label>
+          <input type="datetime-local" id="expiredDate">
+          <span class="field-error" id="err-expiry">Expiry must be after manufacture date</span>
+        </div>
+        <div class="field">
+          <label class="field-label">Quantity to Produce <span class="req">*</span></label>
+          <input type="number" placeholder="e.g 100" class="quantity" id="quantityInput" min="1" max="500">
+          <span class="field-hint">Max 500 barcodes per batch</span>
+        </div>
+        <div class="field">
+          <label class="field-label">Gov. Registration Agency</label>
+          <input type="text" id="govAgency" placeholder="e.g NAFDAC, SON">
+        </div>
+        <div class="field">
+          <label class="field-label">Registration Number</label>
+          <input type="text" id="govRegNo" placeholder="e.g A16-9297">
+        </div>
+        <div class="field">
+          <label class="field-label">Product Image</label>
+          <label class="file-btn" for="product_image" id="productImgLabel"><i class="fa fa-image"></i> <span id="productImgName">Choose image</span></label>
+          <input type="file" id="product_image" accept="image/*">
+          <img class="img-preview" id="productImgPreview">
+        </div>
+        <div class="field">
+          <label class="field-label">Logos (multi-select)</label>
+          <label class="file-btn" for="logo_input" id="logoLabel"><i class="fa fa-flag"></i> <span id="logoFileName">Choose logos</span></label>
+          <input type="file" id="logo_input" multiple accept="image/*">
+        </div>
+        <div class="field">
+          <label class="field-label">Packaged By</label>
+          <input type="text" id="packagedBy_input" placeholder="e.g Aura Bottling Co Ltd, Lagos">
+        </div>
+      </div>
+
+      <div class="form-row form-grid-2">
+        <div class="field">
+          <label class="field-label">Nutritional Value / 100ml</label>
+          <textarea id="nutrientInput" placeholder="e.g Energy | 39kcal | 2%&#10;Fat | 0g | 0%&#10;Sugar | 8g | 9%"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label">Ingredients</label>
+          <textarea id="ingredientsInput" placeholder="e.g Carbonated water, sugar, citric acid, natural flavours"></textarea>
+        </div>
+      </div>
+
+      <div class="form-row" style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
+        <div class="field" style="flex:0 0 auto;">
+          <label class="field-label">Wrapper Theme</label>
+          <div class="color-row">
+            <div class="color-pick"><span>Background</span><input type="color" id="productTheme" value="#0f1003"></div>
+            <div class="color-pick"><span>Text color</span><input type="color" id="productColor" value="#d3e3fd"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" id="generateBarcode"><i class="fa fa-barcode"></i> Generate Barcodes</button>
+        <button class="btn btn-warn" id="printBarcode" style="display:none"><i class="fa fa-print"></i> Print Barcodes</button>
+        <button class="btn btn-blue" id="saveToDatabase" style="display:none"><i class="fa fa-save"></i> Save to Database</button>
+        <button class="btn btn-purple" id="generateWrapper"><i class="fa fa-cube"></i> Generate Wrapper</button>
+        <button class="btn btn-ghost" id="printWrapper" style="display:none"><i class="fa fa-print"></i> Print Wrapper</button>
+        <button class="btn btn-ghost btn-dashed add"><i class="fa fa-plus"></i> Add field</button>
+        <button class="btn btn-ghost" id="clearFormBtn" style="margin-left:auto"><i class="fa fa-refresh"></i> Clear form</button>
+      </div>
+
+      <!-- Barcode output area -->
+      <div class="barcode-output" id="barcodeOutputArea">
+        <div class="section-head" style="margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="section-title" style="font-size:13px;color:var(--accent)">Generated Barcodes</div>
+            <span id="barcodeCount" style="font-size:11px;color:var(--text3)"></span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" id="downloadBarcodesBtn"><i class="fa fa-download"></i> Export SVGs</button>
+            <button class="btn btn-ghost btn-sm" id="regenerateBtn"><i class="fa fa-refresh"></i> Regenerate</button>
+          </div>
+        </div>
+        <div id="generatedBarcode"></div>
+      </div>
+
+      <!-- Wrapper output area -->
+      <div class="wrapper-output" id="wrapperOutputArea">
+        <div class="section-head" style="margin-bottom:10px">
+          <div class="section-title" style="font-size:13px;color:var(--purple)">Product Wrapper Preview</div>
+          <button class="btn btn-ghost btn-sm" onclick="$('#wrapperOutputArea').removeClass('visible')">✕ Close</button>
+        </div>
+        <div id="generatedWrapper"></div>
+      </div>
+
+    </div><!-- /panel Section B -->
+  </div><!-- /page-content -->
+
+  <div class="app-footer"><svg id="admin_barcode"></svg></div>
+</div><!-- /page-dashboard -->
+
+
+<!-- ─────────────── DATABASE PAGE ─────────────── -->
+<div class="page" id="page-database">
+  <div class="db-topbar">
+    <div>
+      <h1 style="font-size:18px;font-weight:600"><i class="fa fa-database" style="color:var(--accent)"></i> Product Database</h1>
+      <p style="font-size:12px;color:var(--text2);margin-top:3px">All registered products · persistent across sessions</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="status-pill"><div class="dot"></div> <span id="dbRecordCount">0</span> records</div>
+      <button class="btn btn-ghost btn-sm" id="exportCsvBtn"><i class="fa fa-file-excel-o"></i> Export CSV</button>
+      <button class="btn btn-danger btn-sm" id="clearDatabaseBtn"><i class="fa fa-trash"></i> Clear all</button>
+    </div>
+  </div>
+  <div class="db-content">
+    <div class="search-bar">
+      <i class="fa fa-search"></i>
+      <input type="search" id="search_databaseInput" placeholder="Search by product name, barcode, or category…">
+      <select id="dbFilterCategory" style="background:transparent;border:0;outline:none;color:var(--text2);font-size:12px;font-family:var(--font);cursor:pointer;">
+        <option value="">All categories</option>
+        <option>Beverages</option><option>Eatables</option><option>Machines</option>
+        <option>Furnitures</option><option>Textiles</option><option>Farm Produce</option>
+        <option>Pharmaceuticals</option><option>Cosmetics</option><option>Electronics</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>S/N</th><th>Date Added</th><th>Product Name</th><th>Size</th>
+            <th>Category</th><th>Unit Price</th><th>MFD</th><th>Expiry</th>
+            <th>Nutrients</th><th>Ingredients</th><th>Barcode</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="databaseTableBody"></tbody>
+      </table>
+      <div class="db-empty" id="dbEmpty"><i class="fa fa-inbox"></i><span>No products registered yet. Save barcodes from the dashboard to populate this table.</span></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ─────────────── PIRACY ALERTS PAGE ─────────────── -->
+<div class="page" id="page-piracy">
+  <div class="topbar">
+    <div>
+      <h1>🛡 Piracy Alerts</h1>
+      <p>Locations where your barcodes were scanned without authorization</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-danger btn-sm" id="reportPiracyBtn"><i class="fa fa-flag"></i> Report to authority</button>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="alert-card alert-danger" style="cursor:default">
+      <div class="alert-icon-wrap icon-danger" style="width:40px;height:40px;font-size:20px">🛡</div>
+      <div class="alert-body">
+        <div class="alert-title title-danger" style="font-size:15px">2 Counterfeit Scan Locations Detected</div>
+        <div class="alert-detail" style="margin-top:6px">Your product barcodes were scanned from the following unauthorized IP locations. This may indicate counterfeit versions of your products are in circulation.</div>
+        <div class="alert-tags" style="margin-top:12px">
+          <span class="tag tag-danger"><i class="fa fa-map-marker"></i> 234.123.456 — Lagos, NG</span>
+          <span class="tag tag-danger"><i class="fa fa-map-marker"></i> 234.123.456 — Unknown</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">What should you do?</div>
+      <div class="panel-desc">Steps to take when piracy is detected</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:var(--card);border-radius:8px;border:1px solid var(--border)">
+          <div style="width:28px;height:28px;background:rgba(0,212,161,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0">1</div>
+          <div><div style="font-weight:600;font-size:13px;margin-bottom:3px">Document the scan locations</div><div style="font-size:12px;color:var(--text3)">Save the IP addresses and timestamp data from the report above as evidence.</div></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:var(--card);border-radius:8px;border:1px solid var(--border)">
+          <div style="width:28px;height:28px;background:rgba(0,212,161,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0">2</div>
+          <div><div style="font-weight:600;font-size:13px;margin-bottom:3px">Contact NAFDAC or SON</div><div style="font-size:12px;color:var(--text3)">File a formal complaint with Nigeria's product regulatory bodies. Include your Manufacturer ID and scan data.</div></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:var(--card);border-radius:8px;border:1px solid var(--border)">
+          <div style="width:28px;height:28px;background:rgba(0,212,161,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0">3</div>
+          <div><div style="font-weight:600;font-size:13px;margin-bottom:3px">Revoke and re-issue barcodes</div><div style="font-size:12px;color:var(--text3)">Generate new barcodes for affected product batches to invalidate any counterfeits in circulation.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ─────────────── EXPIRY WATCH PAGE ─────────────── -->
+<div class="page" id="page-expiry">
+  <div class="topbar">
+    <div>
+      <h1>⏰ Expiry Watch</h1>
+      <p>Products nearing their expiry or warranty date</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-warn btn-sm" id="moveAllToSalesBtn"><i class="fa fa-arrow-right"></i> Move all to sales list</button>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="panel">
+      <div class="panel-title" style="margin-bottom:14px">Expiring Products</div>
+      <table>
+        <thead>
+          <tr><th>Barcode</th><th>Product</th><th>Expiry Date</th><th>Days Left</th><th>Action</th></tr>
+        </thead>
+        <tbody id="expiryTableBody"></tbody>
+      </table>
+    </div>
+    <div class="alert-card alert-info">
+      <div class="alert-icon-wrap icon-info">💡</div>
+      <div class="alert-body">
+        <div class="alert-title title-info">Tip: Reduce prices on expiring products</div>
+        <div class="alert-detail">Discounting products 2–3 weeks before expiry is a proven strategy to clear stock while maximizing recovery value.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ─────────────── SALES LIST PAGE ─────────────── -->
+<div class="page" id="page-saleslist">
+  <div class="topbar">
+    <div>
+      <h1>🏷 Sales List</h1>
+      <p>Products moved here for priority discounting before expiry</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" id="exportSalesListBtn"><i class="fa fa-download"></i> Export CSV</button>
+      <button class="btn btn-danger btn-sm" id="clearSalesListBtn"><i class="fa fa-trash"></i> Clear list</button>
+    </div>
+  </div>
+  <div class="page-content">
+
+    <!-- Summary bar -->
+    <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card">
+        <div class="stat-label">Total items</div>
+        <div class="stat-value c-good" id="sl-stat-total">0</div>
+        <div class="stat-sub">on the sales list</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Expiring ≤ 7 days</div>
+        <div class="stat-value c-bad" id="sl-stat-critical">0</div>
+        <div class="stat-sub">needs urgent action</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Already expired</div>
+        <div class="stat-value c-bad" id="sl-stat-expired">0</div>
+        <div class="stat-sub">remove from shelves</div>
+      </div>
+    </div>
+
+    <!-- Suggest a discount tip -->
+    <div class="alert-card alert-info" id="sl-tip">
+      <div class="alert-icon-wrap icon-info">💡</div>
+      <div class="alert-body">
+        <div class="alert-title title-info">Suggested pricing strategy</div>
+        <div class="alert-detail">Items expiring in &lt; 7 days: discount 40–60%. Items expiring in 8–14 days: discount 20–30%. Items expiring in 15–30 days: discount 10–15%.</div>
+      </div>
+    </div>
+
+    <!-- Main table -->
+    <div class="panel" style="padding:0;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)">
+        <div class="panel-title" style="margin:0">Sales List Items</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="search-bar" style="padding:7px 12px">
+            <i class="fa fa-search"></i>
+            <input type="text" id="sl-search" placeholder="Search products…">
+          </div>
+          <select id="sl-filter-urgency" style="background:var(--navy3);border:1px solid var(--border2);color:var(--text2);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--font);outline:none">
+            <option value="">All urgency</option>
+            <option value="expired">Expired</option>
+            <option value="critical">≤ 7 days</option>
+            <option value="soon">8–14 days</option>
+            <option value="upcoming">15–30 days</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap" style="border:none;border-radius:0">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Barcode</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Expiry Date</th>
+              <th>Days Left</th>
+              <th>Suggested Discount</th>
+              <th>Added</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="sl-tbody"></tbody>
+        </table>
+      </div>
+      <div id="sl-empty" style="display:none">
+        <div class="db-empty">
+          <i class="fa fa-tags"></i>
+          <div>Sales list is empty</div>
+          <div style="font-size:11px;color:var(--text3);text-align:center">Move expiring products here from the Expiry Watch page.<br>They'll appear here for priority discounting.</div>
+          <button class="btn btn-warn btn-sm" style="margin-top:6px" onclick="showPage('expiry')"><i class="fa fa-clock-o"></i> Go to Expiry Watch</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ─────────────── SETTINGS PAGE ─────────────── -->
+<div class="page" id="page-settings">
+  <div class="topbar">
+    <div>
+      <h1>⚙ Settings</h1>
+      <p>Manage your account and application preferences</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" id="resetCompanyBtn"><i class="fa fa-trash"></i> Reset company data</button>
+    </div>
+  </div>
+  <div class="page-content">
+
+    <div class="panel">
+      <div class="panel-title" style="margin-bottom:6px">Server Configuration</div>
+      <div class="panel-desc">Connect this app to your ScanNaija server. Generate your first API key by running the bootstrap curl command shown in your server's startup log.</div>
+
+      <div class="form-grid-2" style="margin-bottom:14px">
+        <div class="field">
+          <label class="field-label">Server URL</label>
+          <input id="s_api_base" type="text" placeholder="http://localhost:3000">
+          <div class="field-hint">Leave blank to use the default (localhost:3000).</div>
+        </div>
+        <div class="field">
+          <label class="field-label">API Key <span class="req">*</span></label>
+          <div style="display:flex;gap:8px">
+            <input id="s_api_key" type="password" placeholder="sn_…" style="flex:1">
+            <button class="btn btn-ghost btn-sm" onclick="toggleApiKeyVisibility()" id="toggleApiKeyBtn" title="Show/hide key"><i class="fa fa-eye"></i></button>
+          </div>
+          <div class="field-hint">Required to sync products and poll piracy flags. Never share this key.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="saveServerConfig()"><i class="fa fa-save"></i> Save</button>
+        <button class="btn btn-ghost btn-sm" onclick="testServerConnection()"><i class="fa fa-plug"></i> Test connection</button>
+      </div>
+
+      <div id="serverConfigStatus" style="margin-top:10px;font-size:12px;display:none"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title" style="margin-bottom:14px">Company Info</div>
+      <div class="form-grid-2" id="settingsCompanyInfo">
+        <div class="field"><label class="field-label">Company Name</label><input id="s_company" type="text" placeholder="Not set" readonly></div>
+        <div class="field"><label class="field-label">Reg. Number</label><input id="s_reg" type="text" placeholder="Not set" readonly></div>
+        <div class="field"><label class="field-label">Email</label><input id="s_email" type="email" placeholder="Not set" readonly></div>
+        <div class="field"><label class="field-label">Country</label><input id="s_country" type="text" placeholder="Not set" readonly></div>
+        <div class="field"><label class="field-label">CEO / Director</label><input id="s_ceo" type="text" placeholder="Not set" readonly></div>
+        <div class="field"><label class="field-label">Manufacturer ID</label><input id="s_mfrid" type="text" placeholder="Not generated" readonly style="font-family:var(--mono);font-size:12px;color:var(--accent)"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title" style="margin-bottom:14px">Preferences</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Auto-save to database after barcode generation</div><div class="setting-sub">Automatically adds products to the database when barcodes are generated</div></div>
+        <label class="switch"><input type="checkbox" id="pref-autosave"><span class="slider-sw"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Show alerts on dashboard</div><div class="setting-sub">Display piracy and expiry warning banners on the home page</div></div>
+        <label class="switch"><input type="checkbox" id="pref-alerts" checked><span class="slider-sw"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Dark barcode lines (for print)</div><div class="setting-sub">Use black lines instead of teal when generating barcodes, better for printing</div></div>
+        <label class="switch"><input type="checkbox" id="pref-darkbars"><span class="slider-sw"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Barcode format</div><div class="setting-sub">CODE128 is recommended for product tracking</div></div>
+        <select id="pref-format" style="background:var(--navy3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:7px 10px;font-size:12px;font-family:var(--font);outline:none;">
+          <option value="CODE128">CODE128 (recommended)</option>
+          <option value="EAN13">EAN-13</option>
+          <option value="CODE39">CODE39</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">About ScanNaija</div>
+      <div class="panel-desc" style="margin-bottom:0">
+        ScanNaija v2.1 — Barcode & Product Security Platform<br>
+        Built to help Nigerian manufacturers protect their products from counterfeiting.<br><br>
+        <span style="color:var(--text3)">Product data is synced to a shared server registry. Buyers can verify any product via the Buyer Verify portal. Piracy flags from buyers automatically alert the manufacturer.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─────────────── BUYER PORTAL PAGE ─────────────── -->
+<div class="page" id="page-buyer">
+  <div class="buyer-shell">
+
+    <div class="buyer-logo">
+      <div class="buyer-logo-icon">◈</div>
+      <div>
+        <div style="font-size:17px;font-weight:700;color:var(--text)">ScanNaija Verify</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">Product Authenticity Scanner</div>
+      </div>
+    </div>
+
+    <div class="buyer-card">
+      <h2>Verify Product Authenticity</h2>
+      <p class="sub">Enter the business name printed on the product and the barcode number (or URL) to check if this product is genuine.</p>
+
+      <div class="field" style="margin-bottom:14px;">
+        <label class="field-label">Business / Company Name <span class="req">*</span></label>
+        <div class="scan-input-wrap" style="margin-bottom:0;">
+          <input type="text" id="buyer_company" placeholder="e.g Adwaps Farms, Aura Cola Ltd…">
+          <span class="scan-icon"><i class="fa fa-building-o"></i></span>
+        </div>
+        <div class="field-hint">Type the brand name exactly as shown on the product packaging.</div>
+      </div>
+
+      <div class="field" style="margin-bottom:20px;">
+        <label class="field-label">Barcode Number or Barcode Link <span class="req">*</span></label>
+        <div class="scan-input-wrap" style="margin-bottom:0;">
+          <input type="text" id="buyer_barcode" placeholder="e.g AdwapsFarms-123456789012 or paste a URL…">
+          <span class="scan-icon"><i class="fa fa-barcode"></i></span>
+        </div>
+        <div class="field-hint">Scan the barcode with your phone camera, or manually enter the code printed below the barcode.</div>
+      </div>
+
+      <button class="verify-btn" id="verifyBtn" onclick="runVerification()">
+        <span id="verifyBtnText"><i class="fa fa-search"></i> &nbsp;Verify Product</span>
+        <div class="verify-spinner" id="verifySpinner"></div>
+      </button>
+
+      <!-- Result -->
+      <div class="verify-result" id="verifyResult">
+        <div class="vr-header">
+          <div class="vr-badge" id="vr_badge"></div>
+          <div>
+            <div class="vr-title" id="vr_title"></div>
+            <div class="vr-sub" id="vr_sub"></div>
+          </div>
+        </div>
+        <div class="vr-details" id="vr_details"></div>
+        <div class="vr-actions" id="vr_actions"></div>
+      </div>
+    </div>
+
+    <!-- Recent scan history -->
+    <div class="recent-scans" id="recentScansSection" style="display:none;">
+      <h4><i class="fa fa-history"></i> &nbsp;Recent Scans</h4>
+      <div id="scanHistoryList"></div>
+      <div style="text-align:center;margin-top:8px;">
+        <span style="font-size:11px;color:var(--text3);cursor:pointer;" onclick="clearScanHistory()"><i class="fa fa-trash"></i> Clear history</span>
+      </div>
+    </div>
+
+    <div style="margin-top:32px;text-align:center;font-size:11px;color:var(--text3);line-height:1.8;">
+      <div>Powered by <strong style="color:var(--accent)">ScanNaija</strong> · Product Security Network</div>
+      <div>Verification is checked against the live manufacturer registry</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+   REPORT TO AUTHORITY MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="reportModal">
+  <div class="modal report-modal">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <div class="modal-title" style="font-size:16px;">🚨 Report Piracy to Authority</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">Submit a formal complaint to Nigerian regulatory bodies</div>
+      </div>
+      <button onclick="closeReportModal()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:0;">✕</button>
+    </div>
+
+    <!-- Step indicator -->
+    <div class="report-steps">
+      <div class="report-step active" id="rs1"><div class="step-num">1</div><span>Select Authority</span><div class="step-line"></div></div>
+      <div class="report-step" id="rs2"><div class="step-num">2</div><span>Incident Details</span><div class="step-line"></div></div>
+      <div class="report-step" id="rs3"><div class="step-num">3</div><span>Review Report</span><div class="step-line"></div></div>
+      <div class="report-step" id="rs4"><div class="step-num">4</div><span>Submit</span></div>
+    </div>
+
+    <!-- Pane 1 — Select Authority -->
+    <div class="report-pane active" id="rp1">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">Choose the regulatory body to report to. You can report to multiple agencies.</div>
+      <div class="authority-grid">
+        <div class="authority-card" data-auth="NAFDAC">
+          <div style="font-size:22px;margin-bottom:6px;">🏥</div>
+          <div class="auth-name">NAFDAC</div>
+          <div class="auth-full">National Agency for Food and Drug Administration and Control</div>
+          <div class="auth-type">Food · Drugs · Cosmetics · Beverages</div>
+        </div>
+        <div class="authority-card" data-auth="SON">
+          <div style="font-size:22px;margin-bottom:6px;">🏭</div>
+          <div class="auth-name">SON</div>
+          <div class="auth-full">Standards Organisation of Nigeria</div>
+          <div class="auth-type">Manufacturing · Industrial · Electronics</div>
+        </div>
+        <div class="authority-card" data-auth="FCCPC">
+          <div style="font-size:22px;margin-bottom:6px;">⚖️</div>
+          <div class="auth-name">FCCPC</div>
+          <div class="auth-full">Federal Competition & Consumer Protection Commission</div>
+          <div class="auth-type">Consumer Protection · Fraud</div>
+        </div>
+        <div class="authority-card" data-auth="NPF">
+          <div style="font-size:22px;margin-bottom:6px;">👮</div>
+          <div class="auth-name">Nigeria Police</div>
+          <div class="auth-full">Nigeria Police Force — Economic & Financial Crimes</div>
+          <div class="auth-type">Criminal Counterfeiting · EFCC Referral</div>
+        </div>
+      </div>
+      <div id="authSelectionError" style="color:var(--danger);font-size:11px;display:none;margin-bottom:6px;">⚠ Please select at least one authority.</div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" onclick="closeReportModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="reportStep(2)">Next <i class="fa fa-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- Pane 2 — Incident Details -->
+    <div class="report-pane" id="rp2">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div class="field">
+          <label class="field-label">Incident Date <span class="req">*</span></label>
+          <input type="date" id="rpt_date">
+        </div>
+        <div class="field">
+          <label class="field-label">Incident Location <span class="req">*</span></label>
+          <input type="text" id="rpt_location" placeholder="e.g Lagos Island Market">
+        </div>
+        <div class="field">
+          <label class="field-label">Estimated Counterfeit Units</label>
+          <input type="number" id="rpt_units" placeholder="e.g 500" min="1">
+        </div>
+        <div class="field">
+          <label class="field-label">Estimated Loss (₦)</label>
+          <input type="number" id="rpt_loss" placeholder="e.g 250000" min="0">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label class="field-label">Affected Products / Barcodes <span class="req">*</span></label>
+        <textarea id="rpt_products" style="min-height:60px;" placeholder="List affected product names or barcode numbers, one per line"></textarea>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label class="field-label">Description of Incident <span class="req">*</span></label>
+        <textarea id="rpt_description" style="min-height:80px;" placeholder="Describe how you discovered the counterfeit products, where they were found, any suspects or distributors involved…"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">Additional Evidence / Notes</label>
+        <textarea id="rpt_evidence" style="min-height:56px;" placeholder="Photo locations, witness info, market names, shop addresses…"></textarea>
+      </div>
+      <div id="rpt_fieldError" style="color:var(--danger);font-size:11px;display:none;margin-top:6px;">⚠ Please fill all required fields.</div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" onclick="reportStep(1)"><i class="fa fa-arrow-left"></i> Back</button>
+        <button class="btn btn-primary btn-sm" onclick="reportStep(3)">Preview Report <i class="fa fa-eye"></i></button>
+      </div>
+    </div>
+
+    <!-- Pane 3 — Review -->
+    <div class="report-pane" id="rp3">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Review the auto-generated report before submitting. This will be sent to the selected authorities.</div>
+      <div class="report-preview" id="rpt_preview"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="downloadReport()"><i class="fa fa-download"></i> Download .txt</button>
+        <button class="btn btn-ghost btn-sm" onclick="copyReport()"><i class="fa fa-copy"></i> Copy to Clipboard</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" onclick="reportStep(2)"><i class="fa fa-arrow-left"></i> Back</button>
+        <button class="btn btn-danger btn-sm" onclick="reportStep(4)"><i class="fa fa-send"></i> Submit Report</button>
+      </div>
+    </div>
+
+    <!-- Pane 4 — Success -->
+    <div class="report-pane" id="rp4">
+      <div style="text-align:center;padding:10px 0 6px;">
+        <div class="success-tick">✓</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:6px;">Report Submitted Successfully</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">Your piracy complaint has been logged and forwarded to:</div>
+        <div id="rpt_submittedTo" style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px;"></div>
+        <div style="font-size:11px;color:var(--text3);">Reference Number</div>
+        <div class="ref-box" id="rpt_refNo"></div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Keep this reference number for follow-up. Contact the agencies directly using these channels:</div>
+        <div class="channel-list" id="rpt_channels"></div>
+        <div style="margin-top:16px;font-size:11px;color:var(--text3);">A copy of this report has been saved locally to your browser.</div>
+      </div>
+      <div class="modal-actions" style="justify-content:center;">
+        <button class="btn btn-ghost btn-sm" onclick="downloadReport()"><i class="fa fa-download"></i> Download Report</button>
+        <button class="btn btn-primary btn-sm" onclick="closeReportModal()">Done</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /main-area -->
+
+
+<!-- ══════════════════════════════════════════
+   SCRIPTS
+══════════════════════════════════════════ -->
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let companyStorage = JSON.parse(localStorage.getItem('sn_company')) || {nameOfCompany:'',regNo:'',dateIssued:'',email:'',country:'',ceo:'',ceoImage:'',affiliate:false,affiliateCompanyName:'',id:''};
+let dbRecords      = JSON.parse(localStorage.getItem('sn_database')) || [];
+let prefs          = JSON.parse(localStorage.getItem('sn_prefs'))    || {autosave:false,alerts:true,darkbars:false,format:'CODE128'};
+let apiKey         = localStorage.getItem('sn_api_key') || '';
+let salesList      = JSON.parse(localStorage.getItem('sn_saleslist') || '[]');
+let barcodesTotalSession = 0;
+let manufacturer_id = '';
+let svgCounter = 0;
+let lastQty = 0;
+let currentConfirmCallback = null;
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+$(document).ready(function(){
+  initClock();
+  applyPrefs();
+  restoreCompany();
+  renderDatabase();
+  updateGreeting();
+  updateStats();
+  loadSettingsPanel();
+  updateSalesListBadge();
+
+  // Admin footer barcode
+  try {
+    JsBarcode('#admin_barcode','scannaija',{format:'CODE128',lineColor:'rgba(255,255,255,0.5)',width:1.5,height:16,background:'transparent',displayValue:false});
+  } catch(e){}
+});
+
+// ═══════════════════════════════════════════
+// CLOCK & GREETING
+// ═══════════════════════════════════════════
+function initClock(){
+  function tick(){ $('.dummyTime').text(new Date().toLocaleTimeString()); }
+  tick(); setInterval(tick,1000);
+}
+function updateGreeting(){
+  const h = new Date().getHours();
+  const greet = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  const g = h<12?'Good morning 🌅':h<17?'Good afternoon ☀️':'Good evening 🌙';
+  $('#greetingText').html(g + ' <span id="greetingName" style="color:var(--accent)">' + (companyStorage.nameOfCompany||'—') + '</span>');
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function showPage(name){
+  $('.page').removeClass('active');
+  $('#page-'+name).addClass('active');
+  $('.nav-item').removeClass('active');
+  $('[data-page="'+name+'"]').addClass('active');
+  if(name==='database') renderDatabase();
+  if(name==='settings') loadSettingsPanel();
+  if(name==='expiry')   renderExpiryWatch();
+  if(name==='saleslist') renderSalesList();
+}
+$(document).on('click','.nav-item[data-page]',function(){ showPage($(this).data('page')); });
+$(document).on('click','.user-pill[data-page]',function(){ showPage($(this).data('page')); });
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+function toast(msg, type='success', duration=3000){
+  const icons = {success:'✓',error:'✕',warn:'⚠'};
+  const t = $('<div class="toast '+type+'"><span class="toast-icon">'+icons[type]+'</span><span>'+msg+'</span></div>');
+  $('#toast-container').append(t);
+  setTimeout(()=>{ t.css({opacity:0,transform:'translateY(6px)',transition:'all .25s'}); setTimeout(()=>t.remove(),280); }, duration);
+}
+
+// ═══════════════════════════════════════════
+// CONFIRM MODAL
+// ═══════════════════════════════════════════
+function confirm(title, desc, cb){
+  currentConfirmCallback = cb;
+  $('#confirmTitle').text(title);
+  $('#confirmDesc').text(desc);
+  $('#confirmModal').addClass('open');
+}
+$('#confirmOk').click(()=>{ if(currentConfirmCallback) currentConfirmCallback(); $('#confirmModal').removeClass('open'); });
+$('#confirmCancel').click(()=>$('#confirmModal').removeClass('open'));
+$('#confirmModal').click(function(e){ if($(e.target).is(this)) $(this).removeClass('open'); });
+
+// ═══════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════
+function dismissAlert(alertId, badgeId, statId){
+  $('#'+alertId).slideUp(200, function(){ $(this).remove(); checkEmptyAlerts(); });
+  $('#'+badgeId).text('0').hide();
+  if(statId) $('#'+statId).text('0').removeClass('c-bad c-warn').css('color','var(--text2)');
+}
+function checkEmptyAlerts(){
+  if($('#alertsContainer .alert-card:visible').length===0){
+    $('#alertsContainer').html('<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px"><i class="fa fa-check-circle" style="color:var(--accent);margin-right:6px"></i> All clear — no active alerts</div>');
+  }
+}
+$('#dismissAllAlerts').click(()=>{
+  $('#alertsContainer .alert-card').slideUp(200, function(){ $(this).remove(); checkEmptyAlerts(); });
+  $('#piracyBadge,#expiryBadge').text('0').hide();
+  toast('All alerts dismissed');
+});
+$('#moveToSalesList').click(()=>{
+  // Get the currently-expiring products and add them all
+  const now      = new Date();
+  const expiring = dbRecords.filter(r => {
+    const d = parseExpiryDate(r.expiry);
+    if(!d) return false;
+    const days = Math.ceil((d.getTime() - now.getTime()) / (24*60*60*1000));
+    return days <= 30;
+  });
+  if(expiring.length === 0){ toast('No expiring products to move','warn'); return; }
+  const added = addToSalesList(expiring);
+  dismissAlert('expiryAlert','expiryBadge','stat-expiry');
+  toast(added > 0 ? added + ' product' + (added===1?'':'s') + ' moved to sales list' : 'All already on the sales list', 'warn');
+});
+
+$('#moveAllToSalesBtn').click(()=>{
+  const now      = new Date();
+  const expiring = dbRecords.filter(r => {
+    const d = parseExpiryDate(r.expiry);
+    if(!d) return false;
+    const days = Math.ceil((d.getTime() - now.getTime()) / (24*60*60*1000));
+    return days <= 30;
+  });
+  if(expiring.length === 0){ toast('No expiring products to move','warn'); return; }
+  const added = addToSalesList(expiring);
+  dismissAlert('expiryAlert','expiryBadge','stat-expiry');
+  $('#expiryTableBody').html('<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:32px;font-size:13px"><i class="fa fa-check-circle" style="color:var(--accent);margin-right:6px"></i>All expiring products moved to sales list</td></tr>');
+  toast(added > 0 ? added + ' product' + (added===1?'':'s') + ' moved to sales list' : 'All already on the sales list', 'warn');
+});
+$('#reportPiracyBtn').click(()=>{ openReportModal(); });
+
+// ═══════════════════════════════════════════
+// REPORT TO AUTHORITY — FULL IMPLEMENTATION
+// ═══════════════════════════════════════════
+const AUTHORITIES = {
+  NAFDAC: {
+    name:'NAFDAC',
+    full:'National Agency for Food and Drug Administration and Control',
+    email:'reportcounterfeits@nafdac.gov.ng',
+    phone:'0800-NAFDAC-1 (08002332211)',
+    web:'www.nafdac.gov.ng',
+    address:'Plot 2032 Olusegun Obasanjo Way, Zone 7, Abuja'
+  },
+  SON: {
+    name:'SON',
+    full:'Standards Organisation of Nigeria',
+    email:'info@son.gov.ng',
+    phone:'+234 (0) 9 290 7812',
+    web:'www.son.gov.ng',
+    address:'52 Lome Crescent, Wuse Zone 7, Abuja'
+  },
+  FCCPC: {
+    name:'FCCPC',
+    full:'Federal Competition & Consumer Protection Commission',
+    email:'complaints@fccpc.gov.ng',
+    phone:'+234 800 FCCPC 00',
+    web:'www.fccpc.gov.ng',
+    address:'No.14 Dar es Salaam Crescent, Off Aminu Kano Crescent, Abuja'
+  },
+  NPF: {
+    name:'Nigeria Police Force',
+    full:'Nigeria Police Force — EFCC Referral Unit',
+    email:'info@efcc.gov.ng',
+    phone:'0800-CALL-EFCC (0800-2255-3322)',
+    web:'www.efcc.gov.ng',
+    address:'5 Fomella Street, Wuse Zone 2, Abuja'
+  }
+};
+
+let selectedAuthorities = [];
+let currentReportStep = 1;
+let generatedReportText = '';
+let generatedRefNo = '';
+
+function openReportModal(){
+  selectedAuthorities = [];
+  currentReportStep = 1;
+  $('.authority-card').removeClass('selected');
+  $('#authSelectionError').hide();
+  $('#rpt_fieldError').hide();
+  $('#rpt_date').val(new Date().toISOString().split('T')[0]);
+  // Pre-fill products from database if any
+  if(dbRecords.length > 0){
+    const names = [...new Set(dbRecords.map(r=>r.productName))].slice(0,5).join('\n');
+    $('#rpt_products').val(names);
+  }
+  setReportPane(1);
+  $('#reportModal').addClass('open');
+}
+function closeReportModal(){
+  $('#reportModal').removeClass('open');
+}
+$('#reportModal').click(function(e){ if($(e.target).is(this)) closeReportModal(); });
+
+// Authority card selection (multi-select)
+$(document).on('click','.authority-card',function(){
+  const auth = $(this).data('auth');
+  $(this).toggleClass('selected');
+  if($(this).hasClass('selected')){
+    if(!selectedAuthorities.includes(auth)) selectedAuthorities.push(auth);
+  } else {
+    selectedAuthorities = selectedAuthorities.filter(a=>a!==auth);
+  }
+  $('#authSelectionError').hide();
+});
+
+function setReportPane(n){
+  currentReportStep = n;
+  $('.report-pane').removeClass('active');
+  $('#rp'+n).addClass('active');
+  // Update step indicators
+  for(let i=1;i<=4;i++){
+    const el=$('#rs'+i);
+    el.removeClass('active done');
+    if(i<n) el.addClass('done');
+    else if(i===n) el.addClass('active');
+  }
+}
+
+function buildReportText(){
+  const auth = selectedAuthorities.map(a=>AUTHORITIES[a].full).join(' / ');
+  const company = companyStorage.nameOfCompany || 'Not Registered';
+  const mfrId   = manufacturer_id || companyStorage.nameOfCompany+'-'+companyStorage.id || 'N/A';
+  const date    = $('#rpt_date').val() || new Date().toLocaleDateString('en-NG');
+  const loc     = $('#rpt_location').val().trim() || 'Not specified';
+  const units   = $('#rpt_units').val() || 'Unknown';
+  const loss    = $('#rpt_loss').val() ? '₦'+parseFloat($('#rpt_loss').val()).toLocaleString() : 'Not estimated';
+  const products= $('#rpt_products').val().trim() || 'See attached evidence';
+  const desc    = $('#rpt_description').val().trim();
+  const evidence= $('#rpt_evidence').val().trim();
+  const now     = new Date();
+  const refNo   = 'SN-' + now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + Math.floor(Math.random()*900000+100000);
+  generatedRefNo = refNo;
+
+  return `FORMAL COUNTERFEIT PRODUCT COMPLAINT
+========================================
+Reference No : ${refNo}
+Date Filed   : ${now.toLocaleDateString('en-NG', {day:'2-digit',month:'long',year:'numeric'})}
+Filed Via    : ScanNaija Product Security Platform v2.1
+Submitted To : ${auth}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COMPLAINANT DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Company Name     : ${company}
+Registration No  : ${companyStorage.regNo || 'N/A'}
+CEO / Director   : ${companyStorage.ceo || 'N/A'}
+Email            : ${companyStorage.email || 'N/A'}
+Country          : ${companyStorage.country || 'Nigeria'}
+Manufacturer ID  : ${mfrId}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INCIDENT DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Date of Incident         : ${date}
+Location                 : ${loc}
+Est. Counterfeit Units   : ${units}
+Estimated Financial Loss : ${loss}
+
+Affected Products / Barcodes:
+${products.split('\n').map(l=>'  • '+l).join('\n')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DESCRIPTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${desc}
+${evidence ? '\nADDITIONAL EVIDENCE / NOTES:\n'+evidence : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCAN ALERT DATA (from ScanNaija System)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Unauthorized Scan Location 1 : 234.123.456 — Lagos, NG
+Unauthorized Scan Location 2 : 234.123.456 — Unknown
+Total Piracy Flags           : 2
+Detection Timestamp          : ${now.toISOString()}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DECLARATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+I, the undersigned, hereby declare that the information provided in this
+complaint is true and accurate to the best of my knowledge. I request the
+relevant authority to investigate and take appropriate legal action against
+the counterfeiters.
+
+Signed : ${companyStorage.ceo || company}
+Company: ${company}
+Date   : ${now.toLocaleDateString('en-NG', {day:'2-digit',month:'long',year:'numeric'})}
+
+[Generated by ScanNaija · scannaija.ng · Ref: ${refNo}]`;
+}
+
+function reportStep(n){
+  if(n === 2){
+    if(selectedAuthorities.length === 0){ $('#authSelectionError').show(); return; }
+    setReportPane(2);
+  } else if(n === 3){
+    const loc  = $('#rpt_location').val().trim();
+    const prod = $('#rpt_products').val().trim();
+    const desc = $('#rpt_description').val().trim();
+    if(!loc || !prod || !desc){ $('#rpt_fieldError').show(); return; }
+    $('#rpt_fieldError').hide();
+    generatedReportText = buildReportText();
+    // Render with bold headings
+    const html = generatedReportText
+      .replace(/^(FORMAL COUNTERFEIT.*)/m,'<strong>$1</strong>')
+      .replace(/(━+)/g,'<span style="color:var(--border2)">$1</span>')
+      .replace(/^([A-Z \/]+:)( .+)?$/gm,'<strong style="color:var(--text)">$1</strong>$2')
+      .replace(/\n/g,'<br>');
+    $('#rpt_preview').html(html);
+    setReportPane(3);
+  } else if(n === 4){
+    // Final submit
+    const submittedTo = selectedAuthorities.map(a=>AUTHORITIES[a].name).join(', ');
+    $('#rpt_submittedTo').text(submittedTo);
+    $('#rpt_refNo').text(generatedRefNo);
+
+    // Build contact channel cards
+    const channels = selectedAuthorities.map(a=>{
+      const au = AUTHORITIES[a];
+      return `<div class="channel-item">
+        <span class="channel-icon">📧</span>
+        <div style="flex:1;text-align:left;">
+          <div style="font-weight:600;color:var(--text)">${au.name}</div>
+          <div style="color:var(--text3)">${au.email} · ${au.phone}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${au.address}</div>
+        </div>
+      </div>`;
+    }).join('');
+    $('#rpt_channels').html(channels);
+
+    // Save to localStorage
+    const reports = JSON.parse(localStorage.getItem('sn_reports')||'[]');
+    reports.push({
+      ref: generatedRefNo,
+      date: new Date().toISOString(),
+      authorities: selectedAuthorities,
+      report: generatedReportText
+    });
+    localStorage.setItem('sn_reports', JSON.stringify(reports));
+
+    setReportPane(4);
+    toast('Report submitted to '+submittedTo+'!', 'success', 5000);
+  } else {
+    setReportPane(n);
+  }
+}
+
+function downloadReport(){
+  if(!generatedReportText){ toast('No report generated yet.','warn'); return; }
+  const blob = new Blob([generatedReportText],{type:'text/plain'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'ScanNaija_PiracyReport_'+generatedRefNo+'.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Report downloaded!');
+}
+
+function copyReport(){
+  if(!generatedReportText){ toast('No report to copy.','warn'); return; }
+  navigator.clipboard.writeText(generatedReportText)
+    .then(()=>toast('Report copied to clipboard!'))
+    .catch(()=>{
+      const el=document.createElement('textarea');
+      el.value=generatedReportText;
+      document.body.appendChild(el);el.select();document.execCommand('copy');el.remove();
+      toast('Report copied!');
+    });
+}
+
+// ═══════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════
+function updateStats(){
+  $('#stat-total').text(dbRecords.length);
+  $('#dbRecordCount').text(dbRecords.length);
+  const badge = $('#dbCountBadge');
+  if(dbRecords.length>0){ badge.text(dbRecords.length).show(); } else { badge.hide(); }
+  renderExpiryWatch();
+}
+
+// ═══════════════════════════════════════════
+// PREFS
+// ═══════════════════════════════════════════
+function applyPrefs(){
+  $('#pref-autosave').prop('checked',prefs.autosave);
+  $('#pref-alerts').prop('checked',prefs.alerts);
+  $('#pref-darkbars').prop('checked',prefs.darkbars);
+  $('#pref-format').val(prefs.format);
+  if(!prefs.alerts) $('#alertsContainer').closest('div').hide();
+}
+function savePrefs(){
+  prefs.autosave  = $('#pref-autosave').is(':checked');
+  prefs.alerts    = $('#pref-alerts').is(':checked');
+  prefs.darkbars  = $('#pref-darkbars').is(':checked');
+  prefs.format    = $('#pref-format').val();
+  localStorage.setItem('sn_prefs', JSON.stringify(prefs));
+  toast('Preferences saved');
+}
+$('#pref-autosave,#pref-alerts,#pref-darkbars,#pref-format').on('change', savePrefs);
+
+// ═══════════════════════════════════════════
+// FILE INPUTS
+// ═══════════════════════════════════════════
+function initFileInput(inputId, labelSpanId, previewId){
+  $('#'+inputId).on('change', function(){
+    const f = this.files[0];
+    if(!f) return;
+    $('#'+labelSpanId).text(f.name.length>22 ? f.name.slice(0,22)+'…' : f.name);
+    $('#'+inputId).closest('.field').find('.file-btn').addClass('has-file');
+    if(previewId){
+      const reader = new FileReader();
+      reader.onload = e => { $('#'+previewId).attr('src',e.target.result).show(); };
+      reader.readAsDataURL(f);
+    }
+  });
+}
+initFileInput('ceo_input','ceoFileName','ceoPreview');
+initFileInput('product_image','productImgName','productImgPreview');
+initFileInput('logo_input','logoFileName',null);
+
+// ═══════════════════════════════════════════
+// AFFILIATE TOGGLE
+// ═══════════════════════════════════════════
+let affiliateOn = false;
+$('#button_yes').click(function(){
+  affiliateOn = true;
+  $(this).addClass('on'); $('#button_no').removeClass('on');
+  $('#affiliateField').slideDown(150);
+});
+$('#button_no').click(function(){
+  affiliateOn = false;
+  $(this).addClass('on'); $('#button_yes').removeClass('on');
+  $('#affiliateField').slideUp(150);
+});
+
+// ═══════════════════════════════════════════
+// RESTORE COMPANY
+// ═══════════════════════════════════════════
+function restoreCompany(){
+  if(!companyStorage.nameOfCompany) return;
+  manufacturer_id = companyStorage.nameOfCompany+'-'+companyStorage.id;
+  setUserIdentity(companyStorage.nameOfCompany);
+  // Fill Section A readonly
+  $('#companyName_input').val(companyStorage.nameOfCompany);
+  $('#regNo_input').val(companyStorage.regNo);
+  $('#dateIssued_input').val(companyStorage.dateIssued);
+  $('#email_input').val(companyStorage.email);
+  $('#country_input').val(companyStorage.country);
+  $('#ceoName_input').val(companyStorage.ceo);
+  // Lock fields
+  lockSectionA();
+  $('#mfrIdValue').text(manufacturer_id);
+  $('#mfrIdDisplay').show();
+  $('#greetingSub').text("Here's your product security overview.");
+}
+function lockSectionA(){
+  $('#sectionA_form input').prop('readonly',true).css('opacity',.7);
+  $('#sectionA_actions').hide();
+  $('#editCompanyBtn').show();
+}
+function unlockSectionA(){
+  $('#sectionA_form input').prop('readonly',false).css('opacity',1);
+  $('#sectionA_actions').show();
+  $('#editCompanyBtn').hide();
+}
+$('#editCompanyBtn').click(()=>{
+  confirm('Edit company details','This will let you update your company info. Your Manufacturer ID will stay the same.', unlockSectionA);
+});
+$('#resetCompanyBtn').click(()=>{
+  confirm('Reset all company data','This will permanently delete your company info and ALL database records. This cannot be undone.', ()=>{
+    localStorage.removeItem('sn_company');
+    localStorage.removeItem('sn_database');
+    location.reload();
+  });
+});
+
+// ═══════════════════════════════════════════
+// GENERATE MANUFACTURER ID
+// ═══════════════════════════════════════════
+$('#generateManufacturer_id').click(function(){
+  const name    = $('#companyName_input').val().trim();
+  const reg     = $('#regNo_input').val().trim();
+  const date    = $('#dateIssued_input').val();
+  const email   = $('#email_input').val().trim();
+  const country = $('#country_input').val().trim();
+  const ceo     = $('#ceoName_input').val().trim();
+  let valid = true;
+  [$('#companyName_input'),$('#regNo_input'),$('#dateIssued_input'),$('#email_input'),$('#country_input'),$('#ceoName_input')].forEach($el=>{
+    if(!$el.val().trim()){ $el.addClass('error'); valid=false; } else { $el.removeClass('error'); }
+  });
+  if(!valid){ toast('Please fill all required company fields.','error'); return; }
+  const uid = Math.floor(Math.random()*9e14)+1e14;
+  companyStorage = {nameOfCompany:name,regNo:reg,dateIssued:date,email:email,country:country,ceo:ceo,ceoImage:'',affiliate:affiliateOn,affiliateCompanyName:$('#affiliateCompany_input').val(),id:uid};
+  localStorage.setItem('sn_company',JSON.stringify(companyStorage));
+  manufacturer_id = name+'-'+uid;
+  $('#mfrIdValue').text(manufacturer_id);
+  $('#mfrIdDisplay').show();
+  setUserIdentity(name);
+  lockSectionA();
+  $('#greetingSub').text("Here's your product security overview.");
+  toast('Manufacturer ID generated and saved! 🎉');
+});
+
+$('#copyMfrId').click(function(){
+  navigator.clipboard.writeText(manufacturer_id).then(()=>toast('Manufacturer ID copied!')).catch(()=>{
+    const el=document.createElement('textarea');el.value=manufacturer_id;document.body.appendChild(el);el.select();document.execCommand('copy');el.remove();toast('Copied!');
+  });
+});
+
+function setUserIdentity(name){
+  const initials = name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+  $('#avatarInitials').text(initials||'?');
+  $('#sidebarUserName').text(name);
+  $('#sidebarCompany').text(companyStorage.regNo||'Registered');
+  updateGreeting();
+}
+
+// ═══════════════════════════════════════════
+// DATE VALIDATION
+// ═══════════════════════════════════════════
+$('#expiredDate,#manufacturedDate').on('change',function(){
+  const mfd = $('#manufacturedDate').val();
+  const exp = $('#expiredDate').val();
+  if(mfd && exp){
+    if(exp <= mfd){
+      $('#expiredDate').addClass('error');
+      $('#err-expiry').show();
+      toast('Expiry date must be after manufacture date','error');
+    } else {
+      $('#expiredDate').removeClass('error').addClass('valid');
+      $('#err-expiry').hide();
+    }
+  }
+});
+
+// ═══════════════════════════════════════════
+// BARCODE GENERATION
+// ═══════════════════════════════════════════
+function BARCODEGENERATOR(barcode){
+  const rand = Math.floor(Math.random()*1e15);
+  const color = prefs.darkbars ? '#000000' : '#00D4A1';
+  const container = $('<div class="barcodeSvg"><svg id="bsv'+rand+'"></svg><div class="barcodeSvg_number">'+barcode+'</div></div>');
+  $('#generatedBarcode').append(container);
+  try {
+    JsBarcode('#bsv'+rand, barcode, {
+      format: prefs.format||'CODE128',
+      lineColor: color,
+      width: 1.8, height: 65,
+      background: 'transparent',
+      displayValue: false
+    });
+  } catch(e){ console.warn('Barcode err:',e); }
+}
+
+$('#generateBarcode').click(function(){
+  const productName = $('#productName_input').val().trim();
+  const qty = parseInt($('#quantityInput').val());
+  let valid = true;
+  if(!productName){ $('#productName_input').addClass('error'); valid=false; }
+  else { $('#productName_input').removeClass('error'); }
+  if(!qty || qty<1){ $('#quantityInput').addClass('error'); valid=false; toast('Set a quantity first.','error'); return; }
+  if(qty>500){ toast('Maximum 500 barcodes per batch.','error'); return; }
+  if(!valid){ toast('Fill required fields first.','error'); return; }
+
+  $('#generatedBarcode').empty();
+  $('#barcodeOutputArea').addClass('visible');
+  svgCounter = 0;
+  lastQty = qty;
+
+  const base = manufacturer_id || companyStorage.nameOfCompany || 'PRODUCT';
+  for(let i=0;i<qty;i++){
+    const uid = Math.floor(Math.random()*1e12);
+    BARCODEGENERATOR(base+'-'+uid);
+    svgCounter++;
+  }
+  barcodesTotalSession += qty;
+  $('#stat-barcodes').text(barcodesTotalSession);
+  $('#barcodeCount').text(qty+' barcode'+(qty>1?'s':'')+' ready');
+  $('#quantityInput').removeClass('error').addClass('valid');
+  $(this).hide();
+  $('#printBarcode,#saveToDatabase').css('display','inline-flex');
+
+  if(prefs.autosave){ saveToDb(); }
+  toast(qty+' barcodes generated successfully!');
+  setTimeout(()=>{ document.getElementById('barcodeOutputArea').scrollIntoView({behavior:'smooth',block:'nearest'}); },100);
+});
+
+$('#regenerateBtn').click(()=>{ $('#generateBarcode').click(); });
+
+// ═══════════════════════════════════════════
+// SAVE TO DATABASE
+// ═══════════════════════════════════════════
+function saveToDb(){
+  const qty = lastQty || parseInt($('#quantityInput').val());
+  if(!qty) return;
+  const barcodes = $('.barcodeSvg_number').map(function(){ return $(this).text(); }).get().slice(-qty);
+  const productName = $('#productName_input').val() || '—';
+  const now = new Date();
+  for(let i=0;i<qty;i++){
+    const rec = {
+      id: dbRecords.length+1,
+      date: now.toLocaleDateString('en-NG'),
+      productName,
+      size:     $('#productSize_input').val()||'—',
+      category: $('#productCategory').val()||'—',
+      price:    '₦'+(parseFloat($('#product_price').val())||0).toLocaleString(),
+      mfd:      $('#manufacturedDate').val()||'—',
+      expiry:   $('#expiredDate').val()||'—',
+      nutrients:$('#nutrientInput').val()||'—',
+      ingredients:$('#ingredientsInput').val()||'—',
+      barcode:  barcodes[i]||(''+Math.floor(Math.random()*1e12)),
+      govAgency:$('#govAgency').val()||'',
+      govRegNo: $('#govRegNo').val()||''
+    };
+    dbRecords.push(rec);
+  }
+  localStorage.setItem('sn_database',JSON.stringify(dbRecords));
+  updateStats();
+  toast(qty+' product'+(qty>1?'s':'')+' saved to database!');
+}
+
+$(document).on('click','#saveToDatabase',function(){
+  const $btn=$(this);
+  $btn.text('Saving…').prop('disabled',true);
+  setTimeout(()=>{
+    saveToDb();
+    $btn.text('✓ Saved').css('color','var(--accent)');
+    setTimeout(()=>{ $btn.html('<i class="fa fa-save"></i> Save to Database').prop('disabled',false).css('color',''); },2000);
+  },300);
+});
+
+// ═══════════════════════════════════════════
+// PRINT
+// ═══════════════════════════════════════════
+$('#printBarcode').click(()=>window.print());
+$('#printWrapper').click(()=>window.print());
+
+// ═══════════════════════════════════════════
+// WRAPPER GENERATOR
+// ═══════════════════════════════════════════
+$('#generateWrapper').click(function(){
+  const bg    = $('#productTheme').val();
+  const color = $('#productColor').val();
+  const name  = $('#productName_input').val()||'Product';
+  const size  = $('#productSize_input').val()||'';
+  const mfd   = $('#manufacturedDate').val()||'';
+  const exp   = $('#expiredDate').val()||'';
+  const nuts  = ($('#nutrientInput').val()||'').replace(/\n/g,'<br>');
+  const ings  = $('#ingredientsInput').val()||'';
+  const pack  = $('#packagedBy_input').val()||'';
+  const mfrId = manufacturer_id||'';
+  const html = `
+    <div style="display:flex;width:100%;background:${bg};color:${color};border-radius:8px;overflow:hidden;font-family:Arial,sans-serif;min-height:160px;">
+      <div style="width:20%;padding:16px;display:flex;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,.15);font-size:22px;font-weight:800;letter-spacing:-1px;">${name}</div>
+      <div style="flex:1;padding:14px;font-size:11px;border-right:1px solid rgba(255,255,255,.15);">
+        <div style="font-weight:700;margin-bottom:6px;font-size:12px;">NUTRITIONAL VALUE / 100ML</div>
+        <div>${nuts||'—'}</div>
+        <div style="margin-top:8px;font-weight:700;">INGREDIENTS</div>
+        <div style="margin-top:3px;">${ings||'—'}</div>
+      </div>
+      <div style="flex:1;padding:14px;font-size:11px;border-right:1px solid rgba(255,255,255,.15);">
+        <div style="font-weight:700;font-size:12px;margin-bottom:6px;">PRODUCT DETAILS</div>
+        <div>Size: <strong>${size}</strong></div>
+        <div>MFD: ${mfd}</div>
+        <div>BB: ${exp}</div>
+        ${pack?'<div style="margin-top:6px;font-size:10px;">'+pack+'</div>':''}
+      </div>
+      <div style="width:18%;padding:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;">
+        <svg id="wrapperBarcode" style="height:60px;width:130px;"></svg>
+        <div style="font-size:9px;opacity:.7;font-family:monospace;text-align:center;">${mfrId}</div>
+      </div>
+    </div>`;
+  $('#generatedWrapper').html(html);
+  $('#wrapperOutputArea').addClass('visible');
+  $('#printWrapper').show();
+  try {
+    JsBarcode('#wrapperBarcode', mfrId||'SCANNAIJA',{format:'CODE128',lineColor:color,width:1.5,height:50,background:'transparent',displayValue:false});
+  } catch(e){}
+  toast('Wrapper preview generated!');
+  setTimeout(()=>{ document.getElementById('wrapperOutputArea').scrollIntoView({behavior:'smooth',block:'nearest'}); },100);
+});
+
+// ═══════════════════════════════════════════
+// ADD CUSTOM FIELD
+// ═══════════════════════════════════════════
+$(document).on('click','.add',function(){
+  const field = $(`<div class="field">
+    <label class="field-label" contenteditable="true" style="cursor:text;border-bottom:1px dashed var(--border2);padding-bottom:2px;">Click to name this field</label>
+    <input type="text" placeholder="Enter value">
+  </div>`);
+  $(this).closest('.panel').find('.form-row:last').append(field);
+  field.find('label').focus();
+  toast('Custom field added','success',1500);
+});
+
+// ═══════════════════════════════════════════
+// CLEAR FORM
+// ═══════════════════════════════════════════
+$('#clearFormBtn').click(()=>{
+  confirm('Clear product form','This will reset all Section B fields. Generated barcodes will remain.', ()=>{
+    $('#productName_input,#productSize_input,#product_price,#quantityInput,#nutrientInput,#ingredientsInput,#packagedBy_input,#govAgency,#govRegNo').val('');
+    $('#productCategory').val('');
+    $('#manufacturedDate,#expiredDate').val('');
+    $('#productImgPreview').hide();
+    $('#productImgName').text('Choose image');
+    $('#productImgLabel').removeClass('has-file');
+    $('#logoFileName').text('Choose logos');
+    $('input.valid,input.error,select.error').removeClass('valid error');
+    $('#generateBarcode').show();
+    $('#printBarcode,#saveToDatabase').hide();
+    $('#barcodeOutputArea').removeClass('visible');
+    $('#wrapperOutputArea').removeClass('visible');
+    lastQty=0; svgCounter=0;
+    toast('Form cleared','warn',1500);
+  });
+});
+
+// ═══════════════════════════════════════════
+// DATABASE RENDER
+// ═══════════════════════════════════════════
+function renderDatabase(filter='', catFilter=''){
+  const tbody = $('#databaseTableBody').empty();
+  const recs = dbRecords.filter(r=>{
+    const matchText = !filter || r.productName.toLowerCase().includes(filter) || r.barcode.toLowerCase().includes(filter) || r.category.toLowerCase().includes(filter);
+    const matchCat  = !catFilter || r.category===catFilter;
+    return matchText && matchCat;
+  });
+  if(recs.length===0){ $('#dbEmpty').show(); tbody.empty(); return; }
+  $('#dbEmpty').hide();
+  recs.forEach((r,idx)=>{
+    const rand = Math.floor(Math.random()*1e10);
+    const row = $(`<tr>
+      <td>${r.id}</td>
+      <td>${r.date}</td>
+      <td style="text-align:left"><strong>${r.productName}</strong>${r.govAgency?'<br><span style="font-size:10px;color:var(--text3)">'+r.govAgency+' '+r.govRegNo+'</span>':''}</td>
+      <td>${r.size}</td>
+      <td><span style="background:rgba(0,212,161,.08);color:var(--accent);padding:2px 8px;border-radius:20px;font-size:11px;">${r.category}</span></td>
+      <td style="font-family:var(--mono)">${r.price}</td>
+      <td style="font-size:11px">${r.mfd}</td>
+      <td style="font-size:11px">${r.expiry}</td>
+      <td style="font-size:11px;max-width:120px;white-space:normal">${r.nutrients}</td>
+      <td style="font-size:11px;max-width:120px;white-space:normal">${r.ingredients}</td>
+      <td class="databaseCode"><div class="barcodeSvg" style="padding:6px"><svg id="dbsv${rand}" style="height:36px;width:100px"></svg><div class="barcodeSvg_number">${r.barcode}</div></div></td>
+      <td><div class="row-actions"><button class="row-btn" data-idx="${r.id-1}" title="Delete"><i class="fa fa-trash"></i></button></div></td>
+    </tr>`);
+    tbody.append(row);
+    try{ JsBarcode('#dbsv'+rand, r.barcode,{format:'CODE128',lineColor:'#9BADC7',width:1.2,height:30,background:'transparent',displayValue:false}); }catch(e){}
+  });
+  updateStats();
+}
+
+// Search & filter
+$('#search_databaseInput').on('input',function(){
+  renderDatabase($(this).val().trim().toLowerCase(), $('#dbFilterCategory').val());
+});
+$('#dbFilterCategory').on('change',function(){
+  renderDatabase($('#search_databaseInput').val().trim().toLowerCase(), $(this).val());
+});
+
+// Delete row
+$(document).on('click','.row-btn',function(){
+  const idx = parseInt($(this).data('idx'));
+  confirm('Delete record','Remove this product from the database? This cannot be undone.',()=>{
+    dbRecords.splice(idx,1);
+    dbRecords.forEach((r,i)=>r.id=i+1);
+    localStorage.setItem('sn_database',JSON.stringify(dbRecords));
+    renderDatabase($('#search_databaseInput').val(), $('#dbFilterCategory').val());
+    toast('Record deleted','warn');
+  });
+});
+
+// Clear all
+$('#clearDatabaseBtn').click(()=>{
+  confirm('Clear entire database','This will delete ALL '+dbRecords.length+' records permanently.',()=>{
+    dbRecords=[];
+    localStorage.setItem('sn_database',JSON.stringify(dbRecords));
+    renderDatabase();
+    updateStats();
+    toast('Database cleared','warn');
+  });
+});
+
+// ═══════════════════════════════════════════
+// CSV EXPORT
+// ═══════════════════════════════════════════
+$('#exportCsvBtn').click(function(){
+  if(!dbRecords.length){ toast('No records to export','warn'); return; }
+  const headers = ['S/N','Date','Product Name','Size','Category','Unit Price','MFD','Expiry','Nutrients','Ingredients','Barcode'];
+  const rows = dbRecords.map(r=>[r.id,r.date,'"'+r.productName+'"',r.size,r.category,r.price,r.mfd,r.expiry,'"'+r.nutrients+'"','"'+r.ingredients+'"',r.barcode]);
+  const csv = [headers.join(','),...rows.map(r=>r.join(','))].join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download='ScanNaija_products_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('CSV exported successfully!');
+});
+
+// ═══════════════════════════════════════════
+// SVG EXPORT (download zip-like blob)
+// ═══════════════════════════════════════════
+$('#downloadBarcodesBtn').click(function(){
+  const svgs = $('#generatedBarcode .barcodeSvg');
+  if(!svgs.length){ toast('No barcodes to export','warn'); return; }
+  // Export first barcode as SVG sample
+  const svgEl = svgs.first().find('svg')[0];
+  if(!svgEl){ toast('No SVG found','warn'); return; }
+  const xml = new XMLSerializer().serializeToString(svgEl);
+  const blob = new Blob(['<?xml version="1.0"?>\n'+xml],{type:'image/svg+xml'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download='barcode_sample.svg';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Sample SVG downloaded. Print all via Print Barcodes.');
+});
+
+// ═══════════════════════════════════════════
+// SERVER CONFIG — point this at your hosted server
+// ═══════════════════════════════════════════
+const API_BASE = (()=>{
+  // Priority: runtime override → saved setting → env → localhost
+  return window.SCANNAIJA_API
+    || localStorage.getItem('sn_api_base')
+    || 'http://localhost:3000';
+})();
+
+const SERVER = {
+  async _req(method, path, body, authenticated=false){
+    try {
+      const headers = {'Content-Type':'application/json'};
+      if(authenticated && apiKey) headers['X-API-Key'] = apiKey;
+      const opts = { method, headers };
+      if(body) opts.body = JSON.stringify(body);
+      const res = await fetch(API_BASE + path, opts);
+      if(res.status === 401) {
+        showToast('error','API key missing or invalid. Check Settings → Server Config.');
+        return null;
+      }
+      if(!res.ok) return null;
+      return await res.json();
+    } catch(e){ return null; }
+  },
+
+  async syncProducts(){
+    setSyncStatus('pending','Syncing…');
+    const companySlug = slugify(companyStorage.nameOfCompany);
+    // Register company
+    const cok = await this._req('POST','/api/company',{
+      slug:         companySlug,
+      nameOfCompany:companyStorage.nameOfCompany,
+      regNo:        companyStorage.regNo,
+      email:        companyStorage.email,
+      mfrId:        manufacturer_id
+    }, true);
+    if(!cok){ setSyncStatus('err','Sync failed'); return; }
+    // Sync all products
+    const products = dbRecords.map(r=>({
+      barcode:     r.barcode,
+      companyName: companyStorage.nameOfCompany,
+      companySlug,
+      mfrId:       manufacturer_id,
+      productName: r.productName,
+      category:    r.category,
+      size:        r.size,
+      price:       r.price,
+      mfd:         r.mfd,
+      expiry:      r.expiry,
+      registeredAt:r.date
+    }));
+    const pok = await this._req('POST','/api/products/bulk',{ products }, true);
+    if(pok){ setSyncStatus('ok', dbRecords.length+' synced'); }
+    else    { setSyncStatus('err','Product sync failed'); }
+  },
+
+  async lookupBarcode(barcodeRaw){
+    const res = await this._req('GET','/api/verify/barcode/'+encodeURIComponent(barcodeRaw));
+    return res && res.found ? res.product : null;
+  },
+
+  async lookupCompany(nameRaw){
+    const res = await this._req('GET','/api/verify/company/'+encodeURIComponent(nameRaw));
+    return res && res.found ? res.company : null;
+  },
+
+  async flagPiracy(barcodeRaw, claimedCompany, realCompanyName){
+    const flag = {
+      barcode: barcodeRaw, claimedCompany, realCompany: realCompanyName,
+      ts: new Date().toISOString()
+    };
+    await this._req('POST','/api/piracy/flag', flag);
+    return flag;
+  },
+
+  async pollPiracyFlags(){
+    if(!companyStorage.nameOfCompany) return;
+    const res = await this._req('GET','/api/piracy/flags/'+encodeURIComponent(companyStorage.nameOfCompany), null, true);
+    if(!res || !res.flags) return;
+    res.flags.forEach(flag => showBuyerPiracyAlert(flag));
+  }
+};
+
+// ═══════════════════════════════════════════
+// EXPIRY WATCH
+// ═══════════════════════════════════════════
+function parseExpiryDate(str){
+  if(!str || str==='—' || str.trim()==='') return null;
+  // Handles: datetime-local (2025-06-15T00:00), date-only (2025-06-15),
+  // slash formats (15/06/2025, 06/15/2025), and plain year (2025)
+  const s = str.trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s);
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
+    const [a,b,y] = s.split('/');
+    // Treat as DD/MM/YYYY (Nigerian convention)
+    return new Date(y+'-'+b+'-'+a);
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function renderExpiryWatch(){
+  const now       = new Date();
+  const oneMonth  = 30 * 24 * 60 * 60 * 1000;
+  const tbody     = $('#expiryTableBody');
+
+  // Get all records expiring within 30 days (include already-expired ones too)
+  const expiring = dbRecords
+    .map(r => {
+      const d = parseExpiryDate(r.expiry);
+      if(!d) return null;
+      const msLeft  = d.getTime() - now.getTime();
+      const daysLeft = Math.ceil(msLeft / (24*60*60*1000));
+      if(daysLeft > 30) return null;       // not yet close
+      return { r, d, daysLeft };
+    })
+    .filter(Boolean)
+    .sort((a,b) => a.daysLeft - b.daysLeft);  // most urgent first
+
+  // ── Expiry Watch table ──────────────────────────────
+  if(expiring.length === 0){
+    tbody.html('<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:32px;font-size:13px"><i class="fa fa-check-circle" style="color:var(--accent);margin-right:6px"></i>No products expiring within the next 30 days</td></tr>');
+  } else {
+    tbody.html(expiring.map(({r, d, daysLeft}) => {
+      let daysLabel, daysColor;
+      if(daysLeft < 0){
+        daysLabel = 'Expired ' + Math.abs(daysLeft) + 'd ago';
+        daysColor = 'var(--danger)';
+      } else if(daysLeft <= 7){
+        daysLabel = daysLeft + ' day' + (daysLeft===1?'':'s');
+        daysColor = 'var(--danger)';
+      } else if(daysLeft <= 14){
+        daysLabel = daysLeft + ' days';
+        daysColor = 'var(--warn)';
+      } else {
+        daysLabel = daysLeft + ' days';
+        daysColor = 'var(--text2)';
+      }
+
+      const expStr = d.toLocaleDateString('en-NG', {day:'2-digit', month:'short', year:'numeric'});
+      return `<tr>
+        <td style="font-family:var(--mono);font-size:11px">${r.barcode||'—'}</td>
+        <td>${r.productName||'—'}${r.size?' ('+r.size+')':''}</td>
+        <td>${expStr}</td>
+        <td><span style="color:${daysColor};font-weight:600">${daysLabel}</span></td>
+        <td><button class="btn btn-warn btn-sm" onclick="moveSingleToSales('${(r.barcode||'').replace(/'/g,"\\'")}')">Move to sales</button></td>
+      </tr>`;
+    }).join(''));
+  }
+
+  // ── Dashboard expiry stat & alert ──────────────────
+  const count = expiring.length;
+  $('#stat-expiry').text(count);
+
+  const badge = $('#expiryBadge');
+  if(count > 0){
+    badge.text(count).show();
+    // Rebuild the alert only if it hasn't been dismissed this session
+    if($('#expiryAlert').length){
+      $('#expiryAlertTitle').text(count + ' product' + (count===1?' is':' are') + ' expiring within 30 days — act before due date');
+      const tags = expiring.slice(0,5).map(({r,daysLeft}) => {
+        const cls = daysLeft <= 7 ? 'tag-danger' : 'tag-warn';
+        const label = (r.productName||r.barcode||'Product') + (daysLeft<0 ? ' (expired)' : ' ('+daysLeft+'d)');
+        return `<span class="tag ${cls}">${label}</span>`;
+      }).join('') + (count>5 ? `<span class="tag tag-warn">+${count-5} more</span>` : '');
+      $('#expiryTags').html(tags);
+      $('#expiryAlert').show();
+    }
+  } else {
+    badge.text('0').hide();
+    if($('#expiryAlert').length) $('#expiryAlert').hide();
+  }
+}
+
+// ═══════════════════════════════════════════
+// SALES LIST
+// ═══════════════════════════════════════════
+function saveSalesList(){
+  localStorage.setItem('sn_saleslist', JSON.stringify(salesList));
+  updateSalesListBadge();
+}
+
+function updateSalesListBadge(){
+  const badge = $('#saleslistBadge');
+  if(salesList.length > 0){ badge.text(salesList.length).show(); }
+  else { badge.hide(); }
+}
+
+function addToSalesList(records){
+  // records: array of dbRecord objects
+  let added = 0;
+  records.forEach(r => {
+    const already = salesList.find(s => s.barcode === r.barcode);
+    if(!already){
+      salesList.push({ ...r, addedAt: new Date().toISOString() });
+      added++;
+    }
+  });
+  saveSalesList();
+  return added;
+}
+
+function removeFromSalesList(barcode){
+  salesList = salesList.filter(s => s.barcode !== barcode);
+  saveSalesList();
+  renderSalesList();
+}
+
+function moveSingleToSales(barcode){
+  const record = dbRecords.find(r => r.barcode === barcode);
+  if(!record){ toast('Product not found in database', 'error'); return; }
+  const added = addToSalesList([record]);
+  if(added > 0){
+    toast('Moved to sales list: ' + (record.productName||barcode), 'warn');
+  } else {
+    toast('Already on the sales list', 'warn');
+  }
+}
+
+function salesListUrgency(daysLeft){
+  if(daysLeft === null) return { label: '—', cls: 'urgency-upcoming', urgencyKey: 'upcoming' };
+  if(daysLeft < 0)   return { label: 'Expired ' + Math.abs(daysLeft) + 'd ago', cls: 'urgency-expired',  urgencyKey: 'expired'  };
+  if(daysLeft <= 7)  return { label: daysLeft + ' day' + (daysLeft===1?'':'s'),  cls: 'urgency-critical', urgencyKey: 'critical' };
+  if(daysLeft <= 14) return { label: daysLeft + ' days',                          cls: 'urgency-soon',     urgencyKey: 'soon'     };
+  return               { label: daysLeft + ' days',                               cls: 'urgency-upcoming', urgencyKey: 'upcoming' };
+}
+
+function salesListDiscount(daysLeft){
+  if(daysLeft === null) return { text: '—', cls: '' };
+  if(daysLeft < 0)   return { text: 'Remove from shelf', cls: 'hot' };
+  if(daysLeft <= 7)  return { text: '40–60% off',         cls: 'hot'  };
+  if(daysLeft <= 14) return { text: '20–30% off',         cls: 'warm' };
+  return               { text: '10–15% off',              cls: ''     };
+}
+
+function renderSalesList(){
+  const now       = new Date();
+  const searchVal = ($('#sl-search').val()||'').toLowerCase();
+  const urgFilter = $('#sl-filter-urgency').val()||'';
+
+  // Annotate each entry with live days-left (expiry may have advanced since it was added)
+  const annotated = salesList.map(r => {
+    const d        = parseExpiryDate(r.expiry);
+    const msLeft   = d ? d.getTime() - now.getTime() : null;
+    const daysLeft = msLeft !== null ? Math.ceil(msLeft / (24*60*60*1000)) : null;
+    return { r, d, daysLeft };
+  }).sort((a, b) => {
+    // Expired first, then by soonest
+    const av = a.daysLeft ?? 9999;
+    const bv = b.daysLeft ?? 9999;
+    return av - bv;
+  });
+
+  // Stats
+  const total    = annotated.length;
+  const critical = annotated.filter(a => a.daysLeft !== null && a.daysLeft >= 0 && a.daysLeft <= 7).length;
+  const expired  = annotated.filter(a => a.daysLeft !== null && a.daysLeft < 0).length;
+  $('#sl-stat-total').text(total);
+  $('#sl-stat-critical').text(critical);
+  $('#sl-stat-expired').text(expired);
+
+  // Filter
+  const filtered = annotated.filter(({ r, daysLeft }) => {
+    if(searchVal && !(r.productName||'').toLowerCase().includes(searchVal) && !(r.barcode||'').toLowerCase().includes(searchVal)) return false;
+    if(urgFilter){
+      const { urgencyKey } = salesListUrgency(daysLeft);
+      if(urgencyKey !== urgFilter) return false;
+    }
+    return true;
+  });
+
+  const tbody = $('#sl-tbody');
+  if(total === 0){
+    tbody.empty();
+    $('#sl-empty').show();
+    $('#sl-tip').hide();
+    return;
+  }
+  $('#sl-empty').hide();
+  $('#sl-tip').show();
+
+  if(filtered.length === 0){
+    tbody.html('<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:28px;font-size:13px">No items match your filter</td></tr>');
+    return;
+  }
+
+  tbody.html(filtered.map(({ r, d, daysLeft }) => {
+    const urg  = salesListUrgency(daysLeft);
+    const disc = salesListDiscount(daysLeft);
+    const expStr = d ? d.toLocaleDateString('en-NG', {day:'2-digit', month:'short', year:'numeric'}) : (r.expiry||'—');
+    const addedStr = r.addedAt ? new Date(r.addedAt).toLocaleDateString('en-NG', {day:'2-digit', month:'short'}) : '—';
+    const safeBarcode = (r.barcode||'').replace(/'/g,"\\'");
+    return `<tr>
+      <td style="text-align:left"><strong style="font-size:13px">${r.productName||'—'}</strong>${r.size?'<br><span style="font-size:10px;color:var(--text3)">'+r.size+'</span>':''}</td>
+      <td style="font-family:var(--mono);font-size:11px">${r.barcode||'—'}</td>
+      <td><span style="background:rgba(0,212,161,.08);color:var(--accent);padding:2px 8px;border-radius:20px;font-size:11px">${r.category||'—'}</span></td>
+      <td style="font-family:var(--mono)">${r.price||'—'}</td>
+      <td style="font-size:12px">${expStr}</td>
+      <td><span class="${urg.cls}">${urg.label}</span></td>
+      <td><span class="discount-badge ${disc.cls}">${disc.text}</span></td>
+      <td style="font-size:11px;color:var(--text3)">${addedStr}</td>
+      <td>
+        <div class="row-actions">
+          <button class="row-btn" style="color:var(--danger);border-color:rgba(232,64,64,.3)" onclick="confirmRemoveFromSales('${safeBarcode}')" title="Remove from list"><i class="fa fa-times"></i></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join(''));
+}
+
+function confirmRemoveFromSales(barcode){
+  confirm('Remove from sales list?', 'This product will be removed from the sales list. It will not be deleted from your database.', ()=>{
+    removeFromSalesList(barcode);
+    toast('Removed from sales list');
+  });
+}
+
+// Export sales list to CSV
+$('#exportSalesListBtn').click(()=>{
+  if(salesList.length === 0){ toast('Sales list is empty','error'); return; }
+  const now = new Date();
+  const headers = ['Product','Barcode','Category','Size','Price','MFD','Expiry','Days Left','Suggested Discount','Added'];
+  const rows = salesList.map(r => {
+    const d = parseExpiryDate(r.expiry);
+    const daysLeft = d ? Math.ceil((d.getTime() - now.getTime()) / (24*60*60*1000)) : '';
+    const disc = salesListDiscount(typeof daysLeft === 'number' ? daysLeft : null).text;
+    return [
+      '"'+(r.productName||'').replace(/"/g,'""')+'"',
+      r.barcode||'',
+      r.category||'',
+      r.size||'',
+      r.price||'',
+      r.mfd||'',
+      r.expiry||'',
+      daysLeft,
+      '"'+disc+'"',
+      r.addedAt ? new Date(r.addedAt).toLocaleDateString('en-NG') : '',
+    ].join(',');
+  });
+  const csv  = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type:'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'scannaija-saleslist-' + now.toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Sales list exported');
+});
+
+// Clear entire list
+$('#clearSalesListBtn').click(()=>{
+  if(salesList.length === 0){ toast('Sales list is already empty','warn'); return; }
+  confirm('Clear sales list?', 'All ' + salesList.length + ' items will be removed from the sales list. Your product database is not affected.', ()=>{
+    salesList = [];
+    saveSalesList();
+    renderSalesList();
+    toast('Sales list cleared');
+  });
+});
+
+// Search + filter
+$('#sl-search').on('input', ()=> renderSalesList());
+$('#sl-filter-urgency').on('change', ()=> renderSalesList());
+
+function slugify(str){
+  return (str||'').toString().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'').slice(0,180);
+}
+
+function setSyncStatus(state, text){
+  const b = $('#syncStatusBadge');
+  b.removeClass('sync-ok sync-pending sync-err');
+  if(state==='ok') b.addClass('sync-ok');
+  else if(state==='pending') b.addClass('sync-pending');
+  else b.addClass('sync-err');
+  $('#syncStatusText').text(text);
+}
+
+function showBuyerPiracyAlert(flag){
+  const banner = $('#buyerPiracyBanner');
+  $('#buyerPiracyBannerBody').text(
+    'A buyer scanned barcode "'+flag.barcode+'" and claimed it belongs to "'+flag.claimedCompany+'". '+
+    'This barcode is registered to your company. The product may be counterfeit. Flagged at '+
+    new Date(flag.ts).toLocaleTimeString('en-NG')+'.'
+  );
+  banner.slideDown(200);
+  $('#piracyBadge').text(parseInt($('#piracyBadge').text()||0)+1).show();
+  toast('⚠ Buyer flagged a potential counterfeit scan!','error',6000);
+}
+
+// ── Patch saveToDb to also sync to server ──────────────
+// We wrap via a boolean flag to avoid any function-redeclaration issues
+let _serverSyncEnabled = true;
+const _saveToDb_orig = saveToDb;
+saveToDb = function(){
+  _saveToDb_orig();
+  if(_serverSyncEnabled) setTimeout(()=>SERVER.syncProducts(), 400);
+};
+
+// Poll every 30 seconds for new piracy flags
+setInterval(()=>SERVER.pollPiracyFlags(), 30000);
+setTimeout(()=>SERVER.pollPiracyFlags(), 3000);
+// Initial sync if company registered
+setTimeout(()=>{ if(companyStorage.nameOfCompany) SERVER.syncProducts(); }, 1200);
+
+// ═══════════════════════════════════════════
+// BUYER VERIFICATION
+// ═══════════════════════════════════════════
+let scanHistory = JSON.parse(localStorage.getItem('sn_scan_history')||'[]');
+
+function renderScanHistory(){
+  if(!scanHistory.length){ $('#recentScansSection').hide(); return; }
+  $('#recentScansSection').show();
+  const list = $('#scanHistoryList').empty();
+  [...scanHistory].reverse().slice(0,6).forEach(s=>{
+    const dotCls = s.status==='authentic'?'shi-dot-ok':s.status==='fake'?'shi-dot-fake':'shi-dot-unk';
+    const lblCls = s.status==='authentic'?'shi-ok':s.status==='fake'?'shi-fake':'shi-unk';
+    const label  = s.status==='authentic'?'✓ Authentic':s.status==='fake'?'✕ Counterfeit':'? Unknown';
+    const item   = $(`<div class="scan-history-item">
+      <div class="shi-dot ${dotCls}"></div>
+      <div class="shi-code">${s.barcode}</div>
+      <div class="shi-status ${lblCls}">${label}</div>
+      <div class="shi-time">${s.timeAgo}</div>
+    </div>`);
+    item.on('click',()=>{
+      $('#buyer_company').val(s.company);
+      $('#buyer_barcode').val(s.barcode);
+      runVerification();
+    });
+    list.append(item);
+  });
+}
+
+function clearScanHistory(){
+  scanHistory=[];
+  localStorage.removeItem('sn_scan_history');
+  renderScanHistory();
+  toast('Scan history cleared','warn',1500);
+}
+
+function timeAgo(iso){
+  const diff = (Date.now()-new Date(iso).getTime())/1000;
+  if(diff<60) return 'just now';
+  if(diff<3600) return Math.floor(diff/60)+'m ago';
+  if(diff<86400) return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
+}
+
+async function runVerification(){
+  const companyRaw = $('#buyer_company').val().trim();
+  const barcodeRaw = $('#buyer_barcode').val().trim();
+
+  // Extract barcode from URL if pasted
+  let barcode = barcodeRaw;
+  try {
+    const url = new URL(barcodeRaw);
+    const q = url.searchParams.get('barcode') || url.searchParams.get('code') || url.searchParams.get('b');
+    if(q) barcode = q;
+    else {
+      const parts = url.pathname.split('/').filter(Boolean);
+      if(parts.length) barcode = parts[parts.length-1];
+    }
+  } catch(e){ /* not a URL, use raw */ }
+
+  if(!companyRaw){ toast('Enter the company name first.','error'); return; }
+  if(!barcode){    toast('Enter or paste a barcode.','error'); return; }
+
+  // Show spinner
+  $('#verifyBtnText').hide();
+  $('#verifySpinner').show();
+  $('#verifyBtn').prop('disabled',true);
+  $('#verifyResult').hide();
+
+  await new Promise(r=>setTimeout(r,900)); // UX delay
+
+  // Look up on server
+  const productRecord = await SERVER.lookupBarcode(barcode);
+  const companyRecord = await SERVER.lookupCompany(companyRaw);
+
+  let status, title, sub, detailRows, actions;
+  const ts = new Date().toISOString();
+
+  if(productRecord){
+    // Barcode found — check if company matches
+    const registeredCompany = productRecord.companyName||'';
+    const companyMatch = slugify(registeredCompany)===slugify(companyRaw);
+
+    if(companyMatch){
+      // ✅ AUTHENTIC
+      status = 'authentic';
+      title  = '✓ Authentic Product';
+      sub    = 'This product is genuine and registered by '+registeredCompany;
+      detailRows = [
+        ['Product',         productRecord.productName||'—'],
+        ['Company',         registeredCompany],
+        ['Category',        productRecord.category||'—'],
+        ['Size',            productRecord.size||'—'],
+        ['Unit Price',      productRecord.price||'—'],
+        ['Manufacture Date',productRecord.mfd||'—'],
+        ['Expiry / BB',     productRecord.expiry||'—'],
+        ['Barcode',         barcode],
+        ['Verified At',     new Date().toLocaleString('en-NG')],
+      ];
+      actions = `<button class="vr-btn vr-btn-share" onclick="shareResult('authentic','${barcode}','${registeredCompany}')"><i class="fa fa-share-alt"></i> Share Result</button>`;
+      showVerifyResult('authentic', title, sub, detailRows, actions);
+
+    } else {
+      // ✕ COUNTERFEIT — barcode exists but under a DIFFERENT company
+      status = 'fake';
+      title  = '✕ COUNTERFEIT DETECTED';
+      sub    = 'This barcode is registered to "'+registeredCompany+'" — NOT to "'+companyRaw+'"';
+      detailRows = [
+        ['Claimed Company',    companyRaw],
+        ['Registered Owner',   registeredCompany],
+        ['Barcode',            barcode],
+        ['Status',             '⚠ MISMATCH — Likely Counterfeit'],
+        ['Scanned At',         new Date().toLocaleString('en-NG')],
+      ];
+      actions = `<button class="vr-btn vr-btn-report" onclick="buyerFileReport('${barcode}','${escJs(companyRaw)}','${escJs(registeredCompany)}')"><i class="fa fa-flag"></i> Report Counterfeit</button>
+                 <button class="vr-btn vr-btn-share" onclick="shareResult('fake','${barcode}','${escJs(companyRaw)}')"><i class="fa fa-share-alt"></i> Share Warning</button>`;
+      showVerifyResult('fake', title, sub, detailRows, actions);
+      // Flag on server & alert manufacturer
+      SERVER.flagPiracy(barcode, companyRaw, registeredCompany);
+    }
+
+  } else if(companyRecord){
+    // Company exists but barcode not found → barcode not in their registry
+    status = 'fake';
+    title  = '✕ Barcode Not Registered';
+    sub    = '"'+companyRaw+'" is a registered company but this barcode is NOT in their product registry.';
+    detailRows = [
+      ['Claimed Company', companyRaw],
+      ['Company Status',  'Registered on ScanNaija'],
+      ['Barcode',         barcode],
+      ['Registry Match',  '✕ Barcode NOT found'],
+      ['Scanned At',      new Date().toLocaleString('en-NG')],
+    ];
+    actions = `<button class="vr-btn vr-btn-report" onclick="buyerFileReport('${barcode}','${escJs(companyRaw)}','')"><i class="fa fa-flag"></i> Report Counterfeit</button>`;
+    showVerifyResult('fake', title, sub, detailRows, actions);
+    SERVER.flagPiracy(barcode, companyRaw, companyRaw);
+
+  } else {
+    // Neither found — unknown
+    status = 'unknown';
+    title  = '? Company Not Found';
+    sub    = '"'+companyRaw+'" is not registered on ScanNaija. This product cannot be verified.';
+    detailRows = [
+      ['Claimed Company', companyRaw],
+      ['Registry Status', 'Not registered on ScanNaija'],
+      ['Barcode',         barcode],
+      ['Advice',          'Ask the seller for proof of authenticity'],
+    ];
+    actions = `<button class="vr-btn vr-btn-share" onclick="shareResult('unknown','${barcode}','${escJs(companyRaw)}')"><i class="fa fa-share-alt"></i> Share Concern</button>`;
+    showVerifyResult('unknown', title, sub, detailRows, actions);
+  }
+
+  // Save to history
+  scanHistory.push({ barcode, company: companyRaw, status, ts, timeAgo: 'just now' });
+  if(scanHistory.length>20) scanHistory.shift();
+  localStorage.setItem('sn_scan_history', JSON.stringify(scanHistory));
+  renderScanHistory();
+
+  $('#verifyBtnText').show();
+  $('#verifySpinner').hide();
+  $('#verifyBtn').prop('disabled',false);
+}
+
+function showVerifyResult(type, title, sub, rows, actions){
+  const cfg = {
+    authentic: {card:'vr-authentic', badge:'vr-badge-ok',  titleCls:'vr-title-ok',  icon:'✓'},
+    fake:      {card:'vr-fake',      badge:'vr-badge-fake', titleCls:'vr-title-fake', icon:'✕'},
+    unknown:   {card:'vr-unknown',   badge:'vr-badge-unk',  titleCls:'vr-title-unk',  icon:'?'},
+  }[type];
+  const r = $('#verifyResult');
+  r.attr('class','verify-result '+cfg.card);
+  $('#vr_badge').attr('class','vr-badge '+cfg.badge).text(cfg.icon);
+  $('#vr_title').attr('class','vr-title '+cfg.titleCls).text(title);
+  $('#vr_sub').text(sub);
+  $('#vr_details').html(rows.map(([l,v])=>`<div class="vr-row"><span class="vr-label">${l}</span><span class="vr-val">${v}</span></div>`).join(''));
+  $('#vr_actions').html(actions);
+  r.show();
+}
+
+function buyerFileReport(barcode, claimedCompany, realCompany){
+  // Pre-fill the report modal with buyer info
+  toast('Opening report form…','warn',2000);
+  // Switch to manufacturer view temporarily to open modal
+  openReportModal();
+  setTimeout(()=>{
+    // Skip to step 2
+    selectedAuthorities=['NAFDAC','FCCPC'];
+    $('.authority-card[data-auth="NAFDAC"],.authority-card[data-auth="FCCPC"]').addClass('selected');
+    setReportPane(2);
+    $('#rpt_date').val(new Date().toISOString().split('T')[0]);
+    $('#rpt_location').val('Buyer scan verification');
+    $('#rpt_products').val(barcode);
+    $('#rpt_description').val(
+      'A buyer scanned barcode "'+barcode+'" and found it was labelled as "'+claimedCompany+
+      '"'+(realCompany?' but the barcode is registered to "'+realCompany+'"':' which is not registered on ScanNaija')+
+      '. This indicates counterfeit products may be in circulation.'
+    );
+  },300);
+}
+
+function shareResult(status, barcode, company){
+  const msgs = {
+    authentic: '✅ I just verified a genuine product from '+company+' using ScanNaija! Barcode: '+barcode,
+    fake:      '⚠️ WARNING: Barcode '+barcode+' claiming to be from '+company+' is COUNTERFEIT! Verified via ScanNaija.',
+    unknown:   '❓ Could not verify product from '+company+' (barcode: '+barcode+'). Company not found on ScanNaija registry.',
+  };
+  const text = msgs[status]||'';
+  if(navigator.share){ navigator.share({text}); }
+  else {
+    navigator.clipboard.writeText(text).then(()=>toast('Result copied to clipboard!','success')).catch(()=>{
+      const el=document.createElement('textarea');el.value=text;document.body.appendChild(el);el.select();document.execCommand('copy');el.remove();
+      toast('Result copied!','success');
+    });
+  }
+}
+
+function escJs(s){ return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+// Enter key triggers verification
+$('#buyer_barcode').on('keydown',function(e){ if(e.key==='Enter') runVerification(); });
+$('#buyer_company').on('keydown',function(e){ if(e.key==='Enter') $('#buyer_barcode').focus(); });
+
+// Render scan history on load
+$(document).ready(function(){ renderScanHistory(); });
+
+// ═══════════════════════════════════════════
+// SETTINGS PANEL
+// ═══════════════════════════════════════════
+function loadSettingsPanel(){
+  $('#s_company').val(companyStorage.nameOfCompany||'');
+  $('#s_reg').val(companyStorage.regNo||'');
+  $('#s_email').val(companyStorage.email||'');
+  $('#s_country').val(companyStorage.country||'');
+  $('#s_ceo').val(companyStorage.ceo||'');
+  $('#s_mfrid').val(manufacturer_id||'Not yet generated');
+  // Populate server config fields
+  $('#s_api_key').val(apiKey||'');
+  const storedBase = localStorage.getItem('sn_api_base')||'';
+  $('#s_api_base').val(storedBase);
+}
+
+function toggleApiKeyVisibility(){
+  const input = $('#s_api_key');
+  const btn   = $('#toggleApiKeyBtn i');
+  if(input.attr('type')==='password'){
+    input.attr('type','text');
+    btn.removeClass('fa-eye').addClass('fa-eye-slash');
+  } else {
+    input.attr('type','password');
+    btn.removeClass('fa-eye-slash').addClass('fa-eye');
+  }
+}
+
+function saveServerConfig(){
+  const newKey  = $('#s_api_key').val().trim();
+  const newBase = $('#s_api_base').val().trim();
+
+  apiKey = newKey;
+  localStorage.setItem('sn_api_key', newKey);
+
+  if(newBase){
+    localStorage.setItem('sn_api_base', newBase);
+    window.SCANNAIJA_API = newBase;
+  } else {
+    localStorage.removeItem('sn_api_base');
+    window.SCANNAIJA_API = undefined;
+  }
+
+  setServerConfigStatus('saved','✓ Server config saved');
+  toast('Server config saved');
+}
+
+async function testServerConnection(){
+  setServerConfigStatus('pending','Testing connection…');
+  try {
+    const base = $('#s_api_base').val().trim() || API_BASE;
+    const key  = $('#s_api_key').val().trim();
+    const headers = {'Content-Type':'application/json'};
+    if(key) headers['X-API-Key'] = key;
+    const res  = await fetch(base+'/api/health', { headers });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    setServerConfigStatus('ok','✓ Connected — '+data.service+' v'+data.version);
+  } catch(e){
+    setServerConfigStatus('error','✕ Could not reach server: '+e.message);
+  }
+}
+
+function setServerConfigStatus(type, msg){
+  const el = $('#serverConfigStatus');
+  const colors = { saved:'var(--accent)', ok:'var(--accent)', error:'var(--danger)', pending:'var(--warn)' };
+  el.css('color', colors[type]||'var(--text2)').text(msg).show();
+}
+</script>
+</body>
+</html>
